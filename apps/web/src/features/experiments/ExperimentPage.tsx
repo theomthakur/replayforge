@@ -23,7 +23,7 @@ function Journey({ status, completedRuns, totalRuns, pairCount, investigating, d
   const runningDone = totalRuns > 0 && completedRuns >= totalRuns;
   const steps: { label: string; detail: string; state: JourneyState }[] = [
     { label: "Experiment ready", detail: "Suite and policy locked", state: "done" },
-    { label: "Paired agents", detail: `${completedRuns}/${totalRuns} runs`, state: failed ? "attention" : runningDone ? "done" : status === "running" ? "active" : "waiting" },
+    { label: "Paired agents", detail: `${completedRuns}/${totalRuns} lane executions`, state: failed ? "attention" : runningDone ? "done" : status === "running" ? "active" : "waiting" },
     { label: "Deterministic tests", detail: `${pairCount} pairs compared`, state: decision ? "done" : runningDone ? "active" : "waiting" },
     { label: "Investigation", detail: investigating ? `${investigating} under review` : pairCount ? "Evidence reconciled" : "Waiting for evidence", state: decision ? "done" : investigating ? "active" : pairCount ? "done" : "waiting" },
     { label: "Release decision", detail: decision ? decision.toUpperCase() : "Policy pending", state: decision ? (decision === "block" ? "attention" : "done") : status === "deciding" ? "active" : "waiting" },
@@ -53,8 +53,8 @@ function OperationsBrief({ baseline, candidate, completedRuns, totalRuns, state 
       <div className="body">
         <div className="lane-card baseline-card"><span>Baseline lane</span><strong>{baseline}</strong></div>
         <div className="lane-card candidate-card"><span>NVIDIA candidate</span><strong>{candidate}</strong></div>
-        <div className="run-progress" aria-label={`${completedRuns} of ${totalRuns} runs complete`}>
-          <div><span>Run completion</span><strong>{completedRuns}/{totalRuns}</strong></div>
+        <div className="run-progress" aria-label={`${completedRuns} of ${totalRuns} lane executions complete`}>
+          <div><span>Lane executions</span><strong>{completedRuns}/{totalRuns}</strong></div>
           <progress value={completedRuns} max={Math.max(totalRuns, 1)} />
         </div>
         <div className="active-work">

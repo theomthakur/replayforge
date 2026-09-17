@@ -28,9 +28,25 @@ class DockerSandbox(LocalSandbox):
         self.info.backend = "docker"
         self.info.limits.update({"memory_mb": 512, "pids": 128, "cpus_millis": 1000})
 
+    def _container_identity(self) -> str:
+        """Match the host owner without ever running the container as root."""
+
+        uid, gid = os.getuid(), os.getgid()
+        if uid != 0:
+            return f"{uid}:{gid}"
+        # The workspace is an isolated temporary copy. A root API process hands that copy to
+        # nobody rather than giving the container root access to a read/write bind mount.
+        try:
+            for path in (self.workspace, *self.workspace.rglob("*")):
+                os.chown(path, 65534, 65534, follow_symlinks=False)
+        except OSError as error:
+            raise SandboxError("cannot prepare a non-root Docker workspace") from error
+        return "65534:65534"
+
     async def run(self, command: str, timeout_seconds: float) -> CommandResult:
         if not is_allowed_command(command):
             raise SandboxError(f"command not allowed: {command!r}")
+        identity = self._container_identity()
         argv = [
             "docker",
             "run",
@@ -38,7 +54,7 @@ class DockerSandbox(LocalSandbox):
             "--network",
             "none",
             "--user",
-            f"{os.getuid()}:{os.getgid()}",
+            identity,
             "--memory",
             "512m",
             "--cpus",

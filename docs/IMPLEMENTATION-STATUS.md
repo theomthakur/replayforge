@@ -22,7 +22,7 @@ account or credential · ⬜ not started.
 
 ## Test counts (17 Sep)
 
-- Engine: 43 · API: 13 · Web: 9 (reducer, components, live page hydration)
+- Engine: 47 · API: 13 · Web: 9 (reducer, components, live page hydration)
 - 20-case fixture experiment: about 21 s via CLI; through the API and SSE it completed with 40 persisted
   runs and 579 events.
 

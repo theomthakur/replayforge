@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import json
 import os
-import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -14,7 +13,8 @@ from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 from replayforge.cassettes import CassetteError, load_suite
 from replayforge.policy import MigrationPolicy
-from replayforge.providers import NebiusTokenFactoryProvider
+from replayforge.provenance import git_revision
+from replayforge.providers import FIXTURE_PROFILES, NebiusTokenFactoryProvider
 from replayforge.report import render_markdown
 from sqlalchemy import select
 from sse_starlette.sse import EventSourceResponse
@@ -219,7 +219,7 @@ def estimate(body: ExperimentBody) -> dict:
 async def _allowed_lane(lane: LaneBody, *, require_nvidia: bool = False) -> None:
     if lane.provider not in ("fixture", "nebius", "benchtrace"):
         raise HTTPException(422, f"unsupported provider {lane.provider!r}")
-    if lane.provider == "fixture" and lane.model not in {m["model"] for m in FIXTURE_MODELS}:
+    if lane.provider == "fixture" and lane.model not in FIXTURE_PROFILES:
         raise HTTPException(422, "unknown fixture profile")
     if lane.provider == "nebius":
         provider = NebiusTokenFactoryProvider()
@@ -236,19 +236,6 @@ async def _allowed_lane(lane: LaneBody, *, require_nvidia: bool = False) -> None
             raise HTTPException(422, "the selected model is not present in the live Nebius catalog")
         if require_nvidia and not selected.is_nvidia:
             raise HTTPException(422, "the candidate lane must use an NVIDIA model from the live Nebius catalog")
-
-
-def _git_sha(path: Path) -> str | None:
-    try:
-        return subprocess.run(
-            ["git", "-C", str(path), "rev-parse", "HEAD"],
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=5,
-        ).stdout.strip()[:64]
-    except (OSError, subprocess.SubprocessError):
-        return None
 
 
 @router.post("/api/experiments")
@@ -281,7 +268,7 @@ async def create_experiment(body: ExperimentBody, idempotency_key: str | None = 
             policy_json=body.policy.model_dump(),
             budget_json=budget,
             task_ids_json=body.task_ids,
-            git_sha=_git_sha(suite.fixture_path),
+            git_sha=git_revision(suite.fixture_path),
             pull_request_url=body.pull_request_url,
             idempotency_key=idempotency_key,
             fixture_mode="fixture" in (body.baseline.provider, body.candidate.provider),

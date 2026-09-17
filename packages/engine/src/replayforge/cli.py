@@ -12,7 +12,8 @@ from replayforge.cassettes import CassetteError, load_suite
 from replayforge.orchestration.case import CaseResult
 from replayforge.orchestration.paired import run_experiment
 from replayforge.policy import MigrationPolicy
-from replayforge.providers import LaneConfig, NebiusTokenFactoryProvider
+from replayforge.provenance import git_revision
+from replayforge.providers import FIXTURE_PROFILES, LaneConfig, NebiusTokenFactoryProvider
 from replayforge.report import render_markdown, to_json
 
 
@@ -20,6 +21,9 @@ def _lane(value: str) -> LaneConfig:
     provider, _, model = value.partition(":")
     if not model:
         raise argparse.ArgumentTypeError("use provider:model, e.g. fixture:fixture/reference or nebius:<model-id>")
+    if provider == "fixture" and model not in FIXTURE_PROFILES:
+        choices = ", ".join(sorted(FIXTURE_PROFILES))
+        raise argparse.ArgumentTypeError(f"unknown fixture profile {model!r}; choose {choices}")
     return LaneConfig(provider=provider, model=model)
 
 
@@ -85,6 +89,7 @@ async def _run(args: argparse.Namespace) -> int:
         for p in result.pairs
     ]
     fixture_mode = "fixture" in (args.baseline.provider, args.candidate.provider)
+    source_revision = git_revision(suite.fixture_path)
     report = render_markdown(
         title="ReplayForge experiment",
         suite_digest=result.suite_digest,
@@ -94,6 +99,7 @@ async def _run(args: argparse.Namespace) -> int:
         comparison=result.comparison,
         decision=result.decision.as_dict(),
         fixture_mode=fixture_mode,
+        source_revision=source_revision,
     )
     (out / "report.md").write_text(report, encoding="utf-8")
     (out / "summary.json").write_text(
@@ -103,6 +109,7 @@ async def _run(args: argparse.Namespace) -> int:
                 "suite_digest": result.suite_digest,
                 "lanes": result.lane_labels,
                 "fixture_mode": fixture_mode,
+                "source_revision": source_revision,
                 "pairs": pairs,
                 "metrics": result.metrics,
                 "comparison": result.comparison,

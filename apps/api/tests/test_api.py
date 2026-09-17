@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import re
 import time
 
 import pytest
@@ -55,7 +56,7 @@ def test_idempotent_creation(client):
     first = _create(client, ["repair-slug"], key="abc").json()
     second = _create(client, ["repair-slug"], key="abc").json()
     assert first["id"] == second["id"]
-    assert len(first["git_sha"]) == 40
+    assert re.fullmatch(r"[0-9a-f]{40}(?:-dirty)?", first["git_sha"])
 
 
 def test_live_nebius_lane_requires_server_key(client):

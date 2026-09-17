@@ -9,7 +9,7 @@ from benchtrace.providers import Provider, ProviderConfig, provider_for_model
 from benchtrace.providers.pricing import PricingTable, load_pricing_file
 
 from replayforge.cassettes.schema import Cassette
-from replayforge.providers.fixture import FixtureProvider
+from replayforge.providers.fixture import FIXTURE_PROFILES, FixtureProvider
 from replayforge.providers.nebius import Catalog, CatalogModel, NebiusTokenFactoryProvider
 
 
@@ -38,6 +38,8 @@ def build_provider(
     pricing: PricingTable | None = load_pricing_file(lane.pricing_file) if lane.pricing_file else None
     config = ProviderConfig(max_concurrency=max_concurrency, pricing_table=pricing)
     if lane.provider == "fixture":
+        if lane.model not in FIXTURE_PROFILES:
+            raise ValueError(f"unknown fixture profile {lane.model!r}; choose one of {sorted(FIXTURE_PROFILES)}")
         return FixtureProvider(
             cassette,
             solutions_dir,
@@ -54,6 +56,7 @@ __all__ = [
     "Catalog",
     "CatalogModel",
     "FixtureProvider",
+    "FIXTURE_PROFILES",
     "LaneConfig",
     "NebiusTokenFactoryProvider",
     "build_provider",

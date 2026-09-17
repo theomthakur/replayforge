@@ -20,6 +20,7 @@ from benchtrace.trace import TokenUsage, ToolCall, TraceRequest, TraceResponse
 from replayforge.cassettes.schema import Cassette, TaskSpec
 
 VARIANT_BREAKS = {"repair-discount": "malformed_arguments", "tool-find-timeout": "wrong_tool"}
+FIXTURE_PROFILES = frozenset({"fixture/reference", "fixture/variant"})
 
 
 class FixtureProvider(Provider):
@@ -36,6 +37,8 @@ class FixtureProvider(Provider):
         return self.cassette.task(task_id)
 
     def _plan(self, task: TaskSpec, profile: str) -> list[tuple[str, dict[str, object]]]:
+        if f"fixture/{profile}" not in FIXTURE_PROFILES:
+            raise ValueError(f"unknown fixture profile: fixture/{profile}")
         steps: list[tuple[str, dict[str, object]]] = []
         commands = [g.command for g in task.graders if g.type in ("command", "test_count")]
         if task.category == "recovery" and commands:

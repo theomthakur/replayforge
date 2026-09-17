@@ -24,6 +24,8 @@ dev = [
 [tool.ruff]
 line-length = 120
 target-version = "py312"
+# Repository fixtures intentionally contain lint and correctness defects for agents to repair.
+exclude = ["fixtures/repos/**"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM"]

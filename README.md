@@ -72,6 +72,9 @@ make live-smoke                              # five paired cases, evidence writt
 ```
 
 No model identifier is hardcoded. Candidates come from the account's live `/models` response.
+For this hackathon build, the **candidate** side of a live Nebius experiment is intentionally restricted
+to NVIDIA models returned by that catalog. Reverse migrations to non-NVIDIA candidates are outside the
+submission scope; the baseline lane remains provider-configurable.
 
 ## Repository map
 

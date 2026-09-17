@@ -1,6 +1,7 @@
 import pytest
 from replayforge.redaction import redact
 from replayforge.sandbox import LocalSandbox, PathViolation
+from replayforge.sandbox.docker import DockerSandbox
 from replayforge.sandbox.tools import TOOL_SCHEMAS, ToolExecutor
 
 
@@ -94,3 +95,19 @@ async def test_timeout_kills_process(sandbox):
 def test_redaction():
     text = redact("key sk-abcdefghijklmnopqrstuvwxyz0123 and ghp_" + "a" * 36)
     assert "sk-abc" not in text and "ghp_" not in text and "[REDACTED" in text
+
+
+def test_root_docker_process_falls_back_to_unprivileged_user(suite, monkeypatch):
+    box = DockerSandbox(suite.fixture_path)
+    changed = []
+    try:
+        monkeypatch.setattr("replayforge.sandbox.docker.os.getuid", lambda: 0)
+        monkeypatch.setattr("replayforge.sandbox.docker.os.getgid", lambda: 0)
+        monkeypatch.setattr(
+            "replayforge.sandbox.docker.os.chown",
+            lambda path, uid, gid, **kwargs: changed.append((path, uid, gid)),
+        )
+        assert box._container_identity() == "65534:65534"
+        assert changed and all(uid == 65534 and gid == 65534 for _, uid, gid in changed)
+    finally:
+        box.close()
