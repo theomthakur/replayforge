@@ -55,6 +55,22 @@ def test_idempotent_creation(client):
     first = _create(client, ["repair-slug"], key="abc").json()
     second = _create(client, ["repair-slug"], key="abc").json()
     assert first["id"] == second["id"]
+    assert len(first["git_sha"]) == 40
+
+
+def test_live_nebius_lane_requires_server_key(client):
+    suite = client.post("/api/suites", json={"path": "demo-suite.yaml"}).json()
+    response = client.post(
+        "/api/experiments",
+        json={
+            "suite_id": suite["id"],
+            "baseline": {"provider": "fixture", "model": "fixture/reference"},
+            "candidate": {"provider": "nebius", "model": "unverified/model"},
+            "task_ids": ["repair-slug"],
+        },
+    )
+    assert response.status_code == 422
+    assert "NEBIUS_TOKEN_FACTORY_API_KEY" in response.text
 
 
 def test_full_fixture_experiment_persists_events_pairs_and_decision(client):

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 
 import { ExperimentPage } from "../src/features/experiments/ExperimentPage";
 
@@ -40,7 +40,7 @@ describe("ExperimentPage live state", () => {
     await waitFor(() => expect(FakeEventSource.instances.length).toBeGreaterThan(0));
     const source = FakeEventSource.instances[FakeEventSource.instances.length - 1];
     expect(source.url).toContain("after=7");
-    source.emit({ schema_version: "1.0", event_id: "e8", seq: 8, experiment_id: "x", type: "tool.started", actor_type: "agent", actor_id: null, occurred_at: null, payload: { task_id: "pay", lane: "candidate", tool: "read_file" } });
+    act(() => source.emit({ schema_version: "1.0", event_id: "e8", seq: 8, experiment_id: "x", type: "tool.started", actor_type: "agent", actor_id: null, occurred_at: null, payload: { task_id: "pay", lane: "candidate", tool: "read_file" } }));
     await waitFor(() => expect(screen.getByText("tool: read_file")).toBeInTheDocument());
   });
 });

@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -215,22 +216,50 @@ def estimate(body: ExperimentBody) -> dict:
     return orchestrator.estimate(suite, body.task_ids or None)
 
 
-def _allowed_lane(lane: LaneBody) -> None:
+async def _allowed_lane(lane: LaneBody, *, require_nvidia: bool = False) -> None:
     if lane.provider not in ("fixture", "nebius", "benchtrace"):
         raise HTTPException(422, f"unsupported provider {lane.provider!r}")
     if lane.provider == "fixture" and lane.model not in {m["model"] for m in FIXTURE_MODELS}:
         raise HTTPException(422, "unknown fixture profile")
+    if lane.provider == "nebius":
+        provider = NebiusTokenFactoryProvider()
+        if not provider.configured:
+            raise HTTPException(422, "NEBIUS_TOKEN_FACTORY_API_KEY is required for a live Nebius lane")
+        try:
+            catalog = await provider.list_models()
+        except Exception as error:  # noqa: BLE001 - provider failure is returned without credentials
+            raise HTTPException(502, f"could not validate the Nebius model catalog: {str(error)[:240]}") from error
+        finally:
+            await provider.aclose()
+        selected = next((model for model in catalog.models if model.id == lane.model), None)
+        if selected is None:
+            raise HTTPException(422, "the selected model is not present in the live Nebius catalog")
+        if require_nvidia and not selected.is_nvidia:
+            raise HTTPException(422, "the candidate lane must use an NVIDIA model from the live Nebius catalog")
+
+
+def _git_sha(path: Path) -> str | None:
+    try:
+        return subprocess.run(
+            ["git", "-C", str(path), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        ).stdout.strip()[:64]
+    except (OSError, subprocess.SubprocessError):
+        return None
 
 
 @router.post("/api/experiments")
-def create_experiment(body: ExperimentBody, idempotency_key: str | None = Header(default=None)) -> dict:
-    _allowed_lane(body.baseline)
-    _allowed_lane(body.candidate)
+async def create_experiment(body: ExperimentBody, idempotency_key: str | None = Header(default=None)) -> dict:
     if idempotency_key:
         with session_scope() as session:
             existing = session.scalar(select(Experiment).where(Experiment.idempotency_key == idempotency_key))
             if existing:
                 return experiment_snapshot(existing.id)
+    await _allowed_lane(body.baseline)
+    await _allowed_lane(body.candidate, require_nvidia=body.candidate.provider == "nebius")
     suite = _loaded_suite(body.suite_id)
     budget = orchestrator.estimate(suite, body.task_ids or None)
     if not budget["within_budget"] and not body.confirm_budget:
@@ -252,6 +281,7 @@ def create_experiment(body: ExperimentBody, idempotency_key: str | None = Header
             policy_json=body.policy.model_dump(),
             budget_json=budget,
             task_ids_json=body.task_ids,
+            git_sha=_git_sha(suite.fixture_path),
             pull_request_url=body.pull_request_url,
             idempotency_key=idempotency_key,
             fixture_mode="fixture" in (body.baseline.provider, body.candidate.provider),
@@ -330,6 +360,7 @@ def experiment_snapshot(experiment_id: str) -> dict:
             "candidate": experiment.candidate_config_json,
             "policy": experiment.policy_json,
             "budget": experiment.budget_json,
+            "git_sha": experiment.git_sha,
             "pull_request_url": experiment.pull_request_url,
             "tasks": [
                 {
@@ -575,6 +606,7 @@ def report(experiment_id: str) -> str:
         comparison=snap["comparison"],
         decision={**snap["decision"], "violations": snap["decision"]["violations"]},
         fixture_mode=snap["fixture_mode"],
+        source_revision=snap["git_sha"],
     )
 
 

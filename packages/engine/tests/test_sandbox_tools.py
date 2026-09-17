@@ -65,6 +65,20 @@ async def test_patch_path_escape_rejected(sandbox):
     assert outcome.error_kind == "path_violation"
 
 
+async def test_rename_path_escape_rejected(sandbox):
+    executor = ToolExecutor(sandbox, list(TOOL_SCHEMAS))
+    patch = "diff --git a/shop/dates.py b/escaped.py\nsimilarity index 100%\nrename from shop/dates.py\nrename to ../escaped.py\n"
+    outcome = await executor.execute("apply_patch", {"patch": patch})
+    assert outcome.error_kind == "path_violation"
+
+
+async def test_symbolic_link_patch_rejected(sandbox):
+    executor = ToolExecutor(sandbox, list(TOOL_SCHEMAS))
+    patch = "diff --git a/link b/link\nnew file mode 120000\n--- /dev/null\n+++ b/link\n@@ -0,0 +1 @@\n+../../outside\n"
+    outcome = await executor.execute("apply_patch", {"patch": patch})
+    assert outcome.error_kind == "path_violation"
+
+
 async def test_disallowed_command_is_a_tool_error(sandbox):
     executor = ToolExecutor(sandbox, list(TOOL_SCHEMAS))
     outcome = await executor.execute("run_command", {"command": "python -c 'print(1)'"})

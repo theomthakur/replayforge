@@ -30,6 +30,7 @@ def render_markdown(
     comparison: Mapping[str, object] | None,
     decision: Mapping[str, object],
     fixture_mode: bool,
+    source_revision: str | None = None,
 ) -> str:
     lines = [f"# {title}", ""]
     if fixture_mode:
@@ -37,7 +38,10 @@ def render_markdown(
             "> **Fixture mode.** At least one lane used the scripted fixture provider. These are not model results.",
             "",
         ]
-    lines += [f"- Suite digest: `{suite_digest}`"] + [f"- {name}: `{label}`" for name, label in lanes.items()] + [""]
+    provenance = [f"- Suite digest: `{suite_digest}`"]
+    if source_revision:
+        provenance.append(f"- Source revision: `{source_revision}`")
+    lines += provenance + [f"- {name}: `{label}`" for name, label in lanes.items()] + [""]
     lines += [
         f"## Decision: **{str(decision['outcome']).upper()}** (policy {decision.get('policy_version')})",
         "",

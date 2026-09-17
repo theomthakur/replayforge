@@ -11,6 +11,7 @@ Status: implemented but not yet exercised on this machine (the Docker daemon was
 from __future__ import annotations
 
 import asyncio
+import os
 import shlex
 import time
 from pathlib import Path
@@ -37,7 +38,7 @@ class DockerSandbox(LocalSandbox):
             "--network",
             "none",
             "--user",
-            "65534:65534",
+            f"{os.getuid()}:{os.getgid()}",
             "--memory",
             "512m",
             "--cpus",
@@ -49,6 +50,8 @@ class DockerSandbox(LocalSandbox):
             "/tmp:size=64m",
             "-e",
             "PYTHONDONTWRITEBYTECODE=1",
+            "-e",
+            "HOME=/tmp",
             "-v",
             f"{self.workspace}:/work:rw",
             "-w",

@@ -90,6 +90,7 @@ export interface ExperimentSnapshot {
   candidate: LaneConfig;
   policy: Record<string, unknown>;
   budget: Record<string, unknown>;
+  git_sha: string | null;
   pull_request_url: string | null;
   tasks: TaskSummary[];
   runs: RunSummary[];

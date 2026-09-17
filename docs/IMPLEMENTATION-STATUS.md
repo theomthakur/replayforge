@@ -15,20 +15,20 @@ account or credential · ⬜ not started.
 | 3 Persistence and orchestration | ✅ | Idempotent creation, persisted events, SSE resume, cancel, resume without duplicate runs (API tests) |
 | 4 Grading, metrics, policy | ✅ | Full grader set, benchtrace McNemar and Wilson intervals, measurement labels, pass/warn/block, 20-case suite |
 | 5 Investigation | ✅ rule-based · 🟡 model-based | Rule investigator classifies real fixture regressions with step references. Model investigator (strict JSON, validated references, rule fallback) is written but not wired to a live model. |
-| 6 API and accessible web app | ✅ | Setup, budget confirmation, live experiment, cases table, trace inspector, timeline, notifications. Verified in headless Chrome against a live local API. |
-| 7 3D Model Lab | 🟡 | Scene bound to the event reducer, lazy-loaded, reduced-motion and no-WebGL fallbacks. **Not visually confirmed:** headless Chrome could not capture the WebGL canvas. Check in a normal browser. |
+| 6 API and accessible web app | ✅ | Setup, budget confirmation, persistent six-stage journey, evidence tabs, cases, traces, timeline and notifications. Component-tested against live event updates. |
+| 7 3D Model Lab | 🟡 | Realistic operations room with desks, workers, monitors, servers, test and policy stations, event-driven work packets, lazy loading, reduced-motion and no-WebGL fallbacks. **Still needs a final visual check in a normal browser.** |
 | 8 GitHub release gate | 🟡 | Check-run upsert, HMAC webhooks and dedupe tested with mocks. **Needs `GITHUB_TOKEN` and a demo PR.** |
 | 9 Deployment and submission | ⬜ | Hosting, final live 20-case run, video, Devpost |
 
 ## Test counts (17 Sep)
 
-- Engine: 40 · API: 12 · Web: 9 (reducer, components, live page hydration)
+- Engine: 43 · API: 13 · Web: 9 (reducer, components, live page hydration)
 - 20-case fixture experiment: about 21 s via CLI; through the API and SSE it completed with 40 persisted
   runs and 579 events.
 
 ## Also not yet done
 
-- Docker sandbox backend exercised (daemon was not running)
+- Docker sandbox backend exercised (daemon was not running; host UID/GID write mapping is implemented)
 - Alembic migrations (tables created from models)
 - GitHub App / OAuth sign-in (a fine-grained token is used instead)
 - Hosted deployment, PostgreSQL

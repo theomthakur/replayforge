@@ -83,12 +83,23 @@ export function SetupPage() {
   );
 
   return (
-    <div className="grid-setup">
+    <div className="setup-shell">
+      <section className="setup-intro">
+        <div>
+          <span className="eyebrow">Coding-agent reliability operations</span>
+          <h1>Prove a model migration<br />before it reaches production.</h1>
+        </div>
+        <p>Replay identical repository work on two models, test every change in isolation, investigate behavioral regressions, and turn the evidence into an enforceable release decision.</p>
+        <div className="setup-capabilities" aria-label="Workflow summary">
+          <span>01 · Replay</span><span>02 · Execute</span><span>03 · Grade</span><span>04 · Investigate</span><span>05 · Gate</span>
+        </div>
+      </section>
+      <div className="grid-setup">
       <section className="panel" aria-labelledby="setup-title">
-        <header><h2 id="setup-title">New migration experiment</h2></header>
+        <header><h2 id="setup-title">Configure a new operation</h2><span className="eyebrow">Step 1 of 2</span></header>
         <div className="body">
           <div className="field">
-            <label htmlFor="suite">Cassette suite</label>
+            <label htmlFor="suite">Versioned workload</label>
             <select id="suite" value={suiteFile} onChange={(e) => setSuiteFile(e.target.value)}>
               {(suites.data ?? []).map((s) => <option key={s.file} value={s.file} disabled={Boolean(s.error)}>{s.name ?? s.file} {s.tasks ? `(${s.tasks} tasks)` : ""}</option>)}
             </select>
@@ -129,7 +140,7 @@ export function SetupPage() {
 
       <div className="stack">
         <section className="panel" aria-labelledby="policy-title">
-          <header><h2 id="policy-title">Migration policy</h2></header>
+          <header><h2 id="policy-title">Release policy</h2><span className="eyebrow">Stored rules</span></header>
           <div className="body">
             {numberField("max_pass_rate_drop", "Max pass-rate drop", "Block if the candidate falls further than this (0.02 = 2 points).")}
             {numberField("max_p95_latency_ms", "Max p95 latency (ms)", "Warn above this.", 500)}
@@ -146,9 +157,9 @@ export function SetupPage() {
         </section>
 
         <section className="panel" aria-labelledby="budget-title">
-          <header><h2 id="budget-title">Budget</h2></header>
+          <header><h2 id="budget-title">Preflight</h2><span className="eyebrow">Step 2 of 2</span></header>
           <div className="body">
-            <button className="btn" onClick={() => runEstimate.mutate()} disabled={!suiteRow.data || runEstimate.isPending}>Estimate requests</button>
+            <button className="btn" onClick={() => runEstimate.mutate()} disabled={!suiteRow.data || runEstimate.isPending}>Calculate run envelope</button>
             {estimate && (
               <div style={{ marginTop: 10 }}>
                 <p><strong>{String(estimate.cases)}</strong> cases × 2 lanes, up to <strong>{String(estimate.max_provider_calls)}</strong> provider calls (limit {String(estimate.limit_provider_calls)}).</p>
@@ -188,6 +199,7 @@ export function SetupPage() {
             </ul>
           </div>
         </section>
+      </div>
       </div>
     </div>
   );

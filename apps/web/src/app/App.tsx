@@ -29,6 +29,7 @@ export function App() {
           ReplayForge <small>model-migration lab for coding agents</small>
         </a>
         <div className="spacer" />
+        <span className="topbar-context">Nebius × NVIDIA · 2026</span>
       </header>
       <main>{match ? <ExperimentPage experimentId={match[1]} /> : <SetupPage />}</main>
     </div>

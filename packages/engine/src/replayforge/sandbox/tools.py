@@ -192,16 +192,22 @@ class ToolExecutor:
         before = self.sandbox.snapshot()
         if "patch" in args:
             patch = str(args["patch"])
-            for header in re.findall(r"^(?:---|\+\+\+) (\S+)", patch, flags=re.M):
+            # Validate ordinary diff headers and metadata-only rename/copy operations. `git apply`
+            # remains in its safe default mode; agent-authored patches never need unsafe paths.
+            for header in re.findall(
+                r"^(?:---|\+\+\+|rename from|rename to|copy from|copy to) (.+)$", patch, flags=re.M
+            ):
+                header = header.strip().strip('"')
                 cleaned = re.sub(r"^[ab]/", "", header)
                 if cleaned != "/dev/null":
                     self.sandbox.resolve(cleaned)
+            if re.search(r"^(?:new file mode|old mode) 120000$", patch, flags=re.M):
+                raise PathViolation("symbolic-link patches are not allowed")
             process = await asyncio.create_subprocess_exec(
                 "git",
                 "apply",
                 "--recount",
                 "--whitespace=nowarn",
-                "--unsafe-paths",
                 "-",
                 cwd=self.sandbox.workspace,
                 stdin=asyncio.subprocess.PIPE,

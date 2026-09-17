@@ -1,6 +1,11 @@
+from dataclasses import replace
+
+import pytest
+from replayforge.orchestration.case import run_case
 from replayforge.orchestration.paired import run_experiment
 from replayforge.policy import MigrationPolicy
-from replayforge.providers import LaneConfig
+from replayforge.providers import LaneConfig, build_provider
+from replayforge.sandbox.base import SandboxError
 
 
 async def test_fixture_reference_passes_every_task(suite):
@@ -59,3 +64,22 @@ async def test_editing_protected_tests_fails_grading(suite):
         assert by_name["forbidden_paths"].score == 0.0  # ...but the protected-path grader catches it
     finally:
         box.close()
+
+
+async def test_suite_setup_command_runs_before_agent(suite):
+    header = suite.cassette.suite.model_copy(update={"setup_command": "python -m pytest -q tests/does-not-exist.py"})
+    cassette = suite.cassette.model_copy(update={"suite": header})
+    configured = replace(suite, cassette=cassette)
+    lane = LaneConfig("fixture", "fixture/reference")
+    provider = build_provider(
+        lane, cassette=configured.cassette, solutions_dir=suite.source_path.parents[1] / "solutions"
+    )
+    with pytest.raises(SandboxError, match="setup command"):
+        await run_case(
+            run_id="setup-test",
+            suite=configured,
+            task=configured.cassette.task("repair-slug"),
+            lane_name="baseline",
+            lane=lane,
+            provider=provider,
+        )

@@ -35,8 +35,8 @@ a cheaper price. ReplayForge measures all of it on the same versioned tasks.
 6. **Deterministic policy.** Pass-rate drop, critical tasks, provider error rate (block); p95 latency and
    cost per success (warn).
 7. **Release gate.** One GitHub check run per experiment, updated rather than duplicated on retry.
-8. **Model Lab.** A web app with an accessible table view and a 3D lab, both driven by the same persisted
-   event log.
+8. **Reliability operations floor.** A persistent workflow journey, accessible evidence views and a
+   realistic 3D operations room are all driven by the same stored event log.
 
 ## Built on benchtrace
 
