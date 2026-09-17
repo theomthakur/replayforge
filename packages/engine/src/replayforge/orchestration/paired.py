@@ -17,6 +17,7 @@ from benchtrace.stats import compare_paired
 from replayforge.cassettes.schema import LoadedSuite, TaskSpec
 from replayforge.costing import lane_metrics
 from replayforge.investigation import Finding, needs_investigation, pair_outcome, rule_investigate
+from replayforge.orchestration.agent import EventSink, _no_events
 from replayforge.orchestration.case import CaseResult, run_case
 from replayforge.policy import Decision, MigrationPolicy, PairFact, evaluate_policy
 from replayforge.providers import LaneConfig, build_provider
@@ -66,6 +67,7 @@ async def run_lanes(
     sandbox_backend: str = "local",
     on_result: CaseCallback = _ignore,
     skip: set[tuple[str, str]] | None = None,
+    event_sink_for: Callable[[TaskSpec, str], EventSink] | None = None,
 ) -> list[CaseResult]:
     """Run every (task, lane) concurrently with a per-lane semaphore. Skips already-completed keys."""
 
@@ -83,6 +85,7 @@ async def run_lanes(
                 lane=lanes[lane],
                 provider=providers[lane],
                 sandbox_backend=sandbox_backend,
+                on_event=event_sink_for(task, lane) if event_sink_for else _no_events,
             )
             results.append(result)
             await on_result(result)
