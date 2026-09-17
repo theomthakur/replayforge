@@ -1,0 +1,1 @@
+load_settings reads the file. module=shop/settings.py

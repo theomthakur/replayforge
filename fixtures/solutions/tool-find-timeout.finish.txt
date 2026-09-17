@@ -1,0 +1,1 @@
+Found DEFAULT_TIMEOUT_SECONDS in shop/settings.py. timeout=42

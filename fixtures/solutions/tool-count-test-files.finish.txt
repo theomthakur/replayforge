@@ -1,0 +1,1 @@
+Counted test modules under tests/ including tests/loyalty. test_files=10

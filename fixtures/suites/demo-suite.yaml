@@ -1,0 +1,242 @@
+schema_version: "1.0"
+suite:
+  id: replayforge-demo
+  name: ReplayForge public coding suite
+  description: >-
+    Twenty small coding-agent tasks over one synthetic Python repository: bug fixes, structured
+    tool use, repository navigation, test generation, refactoring and recovery.
+  repository_fixture: fixtures/repos/demo-python
+  default_timeout_seconds: 90
+  default_limits:
+    max_steps: 12
+    max_wall_seconds: 120
+tasks:
+  # ---- targeted bug fixes (6) ----
+  - id: repair-slug
+    category: bug_fix
+    description: Repair product slug generation.
+    critical: false
+    prompt: |
+      The tests in tests/test_slug.py fail. Fix shop/slug.py so slugs are lowercase words and
+      digits joined by single hyphens, with no leading or trailing hyphens. Do not edit tests.
+    graders:
+      - {type: command, command: "python -m pytest -q tests/test_slug.py", expected_exit_code: 0}
+      - {type: forbidden_paths, paths: ["tests/"]}
+  - id: repair-discount
+    category: bug_fix
+    description: Repair percentage discounts.
+    critical: true
+    prompt: |
+      apply_discount in shop/pricing.py subtracts the percent value instead of applying a
+      percentage. Fix it so tests/test_pricing.py passes. Round down to whole cents. Do not edit tests.
+    graders:
+      - {type: command, command: "python -m pytest -q tests/test_pricing.py", expected_exit_code: 0}
+      - {type: forbidden_paths, paths: ["tests/"]}
+  - id: repair-cart-total
+    category: bug_fix
+    description: Repair cart totals so quantity is counted.
+    critical: true
+    prompt: |
+      Cart.total_cents in shop/cart.py ignores item quantity. Fix it so tests/test_cart.py passes.
+      Do not edit tests.
+    graders:
+      - {type: command, command: "python -m pytest -q tests/test_cart.py", expected_exit_code: 0}
+      - {type: forbidden_paths, paths: ["tests/"]}
+  - id: repair-date-parse
+    category: bug_fix
+    description: Repair ISO order-date parsing.
+    critical: false
+    prompt: |
+      parse_order_date in shop/dates.py returns wrong dates. Fix it so tests/test_dates.py passes.
+      Do not edit tests.
+    graders:
+      - {type: command, command: "python -m pytest -q tests/test_dates.py", expected_exit_code: 0}
+      - {type: forbidden_paths, paths: ["tests/"]}
+  - id: repair-inventory-reserve
+    category: bug_fix
+    description: Prevent reserving more stock than is available.
+    critical: true
+    prompt: |
+      Inventory.reserve in shop/inventory.py lets callers reserve one more unit than is in stock.
+      Fix it so tests/test_inventory.py passes. Do not edit tests.
+    graders:
+      - {type: command, command: "python -m pytest -q tests/test_inventory.py", expected_exit_code: 0}
+      - {type: forbidden_paths, paths: ["tests/"]}
+  - id: repair-email-validation
+    category: bug_fix
+    description: Tighten customer email validation.
+    critical: false
+    prompt: |
+      is_valid_email in shop/customers.py accepts domains without a dot and domains ending in a
+      dot. Fix it so tests/test_customers.py passes. Do not edit tests.
+    graders:
+      - {type: command, command: "python -m pytest -q tests/test_customers.py", expected_exit_code: 0}
+      - {type: forbidden_paths, paths: ["tests/"]}
+
+  # ---- structured tool use (4) ----
+  - id: tool-find-timeout
+    category: tool_use
+    description: Find a constant with search_text and report it.
+    critical: false
+    prompt: |
+      Use the search_text tool to find the value of DEFAULT_TIMEOUT_SECONDS. Do not change any
+      files. Call finish with a summary containing exactly `timeout=<value>`.
+    graders:
+      - {type: tool_contract, required_tools: [search_text, finish], ordered: true}
+      - {type: output_regex, pattern: "timeout=42\\b"}
+      - {type: forbidden_paths, paths: ["shop/", "tests/", "config/"]}
+  - id: tool-read-tax-rate
+    category: tool_use
+    description: Read a JSON config file and report a field.
+    critical: false
+    prompt: |
+      Use read_file on config/shop.json and report the tax rate. Do not change any files. Call
+      finish with a summary containing exactly `tax_rate=<value>`.
+    graders:
+      - {type: tool_contract, required_tools: [read_file, finish], ordered: true}
+      - {type: output_regex, pattern: "tax_rate=8\\b"}
+      - {type: forbidden_paths, paths: ["shop/", "tests/", "config/"]}
+  - id: tool-count-test-files
+    category: tool_use
+    description: Use list_files to count test modules.
+    critical: false
+    prompt: |
+      Use list_files to count how many files named test_*.py exist anywhere under tests/
+      (including subdirectories). Do not change any files. Call finish with a summary containing
+      exactly `test_files=<count>`.
+    graders:
+      - {type: tool_contract, required_tools: [list_files, finish], ordered: false}
+      - {type: output_regex, pattern: "test_files=10\\b"}
+      - {type: forbidden_paths, paths: ["shop/", "tests/", "config/"]}
+  - id: tool-run-order-tests
+    category: tool_use
+    description: Run one test module and report the passed count.
+    critical: false
+    prompt: |
+      Use run_command to run `python -m pytest -q tests/test_orders.py`. Do not change any files.
+      Call finish with a summary containing exactly `passed=<number of passing tests>`.
+    graders:
+      - {type: tool_contract, required_tools: [run_command, finish], ordered: true}
+      - {type: output_regex, pattern: "passed=5\\b"}
+      - {type: forbidden_paths, paths: ["shop/", "tests/", "config/"]}
+
+  # ---- repository navigation (3) ----
+  - id: nav-money-formatter
+    category: navigation
+    description: Locate the money formatting function.
+    critical: false
+    prompt: |
+      Find the file that defines the function which formats cents for display. Do not change any
+      files. Call finish with a summary containing exactly `file=<path relative to the repository root>`.
+    graders:
+      - {type: output_regex, pattern: "file=shop/formatting\\.py\\b"}
+      - {type: forbidden_paths, paths: ["shop/", "tests/", "config/"]}
+  - id: nav-free-shipping
+    category: navigation
+    description: Locate the free-shipping threshold and convert it to dollars.
+    critical: false
+    prompt: |
+      Find the order subtotal at which shipping becomes free. Do not change any files. Call finish
+      with a summary containing exactly `threshold_dollars=<whole dollars>`.
+    graders:
+      - {type: output_regex, pattern: "threshold_dollars=50\\b"}
+      - {type: forbidden_paths, paths: ["shop/", "tests/", "config/"]}
+  - id: nav-config-reader
+    category: navigation
+    description: Locate the module that reads config/shop.json.
+    critical: false
+    prompt: |
+      Find the Python module that loads config/shop.json. Do not change any files. Call finish with
+      a summary containing exactly `module=<path relative to the repository root>`.
+    graders:
+      - {type: output_regex, pattern: "module=shop/settings\\.py\\b"}
+      - {type: forbidden_paths, paths: ["shop/", "tests/", "config/"]}
+
+  # ---- test generation (3) ----
+  - id: testgen-shipping
+    category: test_generation
+    description: Write tests for shipping cost.
+    critical: false
+    prompt: |
+      Create tests/test_shipping.py with at least three passing pytest tests for
+      shipping_cost_cents in shop/shipping.py, including the free-shipping boundary. Do not edit
+      files under shop/.
+    graders:
+      - {type: file_exists, path: tests/test_shipping.py}
+      - {type: test_count, command: "python -m pytest -q tests/test_shipping.py", min_passed: 3, max_failed: 0}
+      - {type: forbidden_paths, paths: ["shop/"]}
+  - id: testgen-formatting
+    category: test_generation
+    description: Write tests for money formatting.
+    critical: false
+    prompt: |
+      Create tests/test_formatting.py with at least three passing pytest tests for format_money
+      in shop/formatting.py, including an amount under one dollar. Do not edit files under shop/.
+    graders:
+      - {type: file_exists, path: tests/test_formatting.py}
+      - {type: test_count, command: "python -m pytest -q tests/test_formatting.py", min_passed: 3, max_failed: 0}
+      - {type: forbidden_paths, paths: ["shop/"]}
+  - id: testgen-receipt-edges
+    category: test_generation
+    description: Write edge-case tests for receipts.
+    critical: false
+    prompt: |
+      Create tests/test_receipt_edges.py with at least three passing pytest tests for
+      receipt_lines in shop/receipt.py, covering a zero subtotal and a zero tax rate. Do not edit
+      files under shop/ or the existing tests.
+    graders:
+      - {type: file_exists, path: tests/test_receipt_edges.py}
+      - {type: test_count, command: "python -m pytest -q tests/test_receipt_edges.py", min_passed: 3, max_failed: 0}
+      - {type: forbidden_paths, paths: ["shop/", "tests/test_receipt.py"]}
+
+  # ---- refactoring with invariant tests (2) ----
+  - id: refactor-receipt-tax
+    category: refactor
+    description: Extract the duplicated tax calculation.
+    critical: false
+    prompt: |
+      shop/receipt.py computes the tax twice. Add a function `tax_cents(subtotal_cents,
+      tax_rate_percent)` in the same file and use it in receipt_lines. Behaviour must not change;
+      tests/test_receipt.py must still pass. Do not edit tests.
+    graders:
+      - {type: command, command: "python -m pytest -q tests/test_receipt.py", expected_exit_code: 0}
+      - {type: file_regex, path: shop/receipt.py, pattern: "def tax_cents\\("}
+      - {type: forbidden_paths, paths: ["tests/"]}
+  - id: refactor-order-labels
+    category: refactor
+    description: Replace an if-chain with a lookup table.
+    critical: false
+    prompt: |
+      Replace the if/elif chain in shop/orders.py with a module-level dictionary named
+      STATUS_LABELS. Unknown statuses must still return "Unknown"; tests/test_orders.py must still
+      pass. Do not edit tests.
+    graders:
+      - {type: command, command: "python -m pytest -q tests/test_orders.py", expected_exit_code: 0}
+      - {type: file_regex, path: shop/orders.py, pattern: "STATUS_LABELS\\s*(:[^=]+)?="}
+      - {type: forbidden_paths, paths: ["tests/"]}
+
+  # ---- recovery after a failing first command (2) ----
+  - id: recover-missing-setting
+    category: recovery
+    description: Diagnose a failing test caused by missing configuration.
+    critical: false
+    prompt: |
+      Run `python -m pytest -q tests/test_settings.py` first. It fails. Fix the configuration
+      data, not the code or the test, so the test passes.
+    graders:
+      - {type: command, command: "python -m pytest -q tests/test_settings.py", expected_exit_code: 0}
+      - {type: forbidden_paths, paths: ["tests/", "shop/"]}
+      - {type: tool_contract, required_tools: [run_command], ordered: false}
+  - id: recover-loyalty-fixture
+    category: recovery
+    description: Supply a missing pytest fixture.
+    critical: false
+    prompt: |
+      Run `python -m pytest -q tests/loyalty` first. It errors because a fixture is missing. Add a
+      tests/loyalty/conftest.py that provides the member_subtotal fixture so the test passes. Do
+      not edit tests/loyalty/test_loyalty.py or files under shop/.
+    graders:
+      - {type: command, command: "python -m pytest -q tests/loyalty", expected_exit_code: 0}
+      - {type: file_exists, path: tests/loyalty/conftest.py}
+      - {type: forbidden_paths, paths: ["tests/loyalty/test_loyalty.py", "shop/"]}
+      - {type: tool_contract, required_tools: [run_command], ordered: false}

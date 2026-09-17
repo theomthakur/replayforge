@@ -1,0 +1,1 @@
+config/shop.json sets tax_rate_percent to 8. tax_rate=8

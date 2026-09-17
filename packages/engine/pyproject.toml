@@ -1,0 +1,23 @@
+[project]
+name = "replayforge"
+version = "0.1.0"
+description = "ReplayForge engine: cassettes, sandboxes, paired runs, grading, policy"
+requires-python = ">=3.12"
+license = { text = "Apache-2.0" }
+dependencies = [
+  "benchtrace",
+  "httpx==0.28.1",
+  "pydantic==2.11.7",
+  "PyYAML==6.0.2",
+  "jsonschema==4.25.0",
+]
+
+[project.scripts]
+replayforge = "replayforge.cli:main"
+
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/replayforge"]

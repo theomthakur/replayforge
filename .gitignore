@@ -1,0 +1,31 @@
+# secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# node
+node_modules/
+apps/web/dist/
+
+# runtime data: databases, traces, sandboxes, provider responses, evidence
+data/
+evidence/
+artifacts/
+*.db
+*.db-journal
+*.sqlite
+
+.DS_Store

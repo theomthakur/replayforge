@@ -1,0 +1,1 @@
+FREE_SHIPPING_THRESHOLD_CENTS is 5000 cents. threshold_dollars=50
