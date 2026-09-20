@@ -1,7 +1,7 @@
-import { ContactShadows, Html, OrbitControls, RoundedBox } from "@react-three/drei";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
-import type { Group } from "three";
+import { ContactShadows, Html, Line, OrbitControls, RoundedBox } from "@react-three/drei";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useMemo, useRef } from "react";
+import type { Group, OrthographicCamera } from "three";
 
 import type { Lane, TaskSummary } from "../api/types";
 import { caseKey, type CaseStage, type LabState } from "../features/experiments/labState";
@@ -154,6 +154,32 @@ function Plant({ position }: { position: [number, number, number] }) {
   </group>;
 }
 
+function StationZone({ position, size, color, selected = false }: {
+  position: [number, number, number]; size: [number, number]; color: string; selected?: boolean;
+}) {
+  return <group position={position}>
+    <RoundedBox args={[size[0], .055, size[1]]} radius={.12} smoothness={3} receiveShadow>
+      <meshStandardMaterial color={selected ? color : "#e8ece4"} roughness={.9} />
+    </RoundedBox>
+    <Line points={[
+      [-size[0] / 2 + .12, .035, -size[1] / 2 + .12], [size[0] / 2 - .12, .035, -size[1] / 2 + .12],
+      [size[0] / 2 - .12, .035, size[1] / 2 - .12], [-size[0] / 2 + .12, .035, size[1] / 2 - .12],
+      [-size[0] / 2 + .12, .035, -size[1] / 2 + .12],
+    ]} color={color} lineWidth={selected ? 2 : 1} transparent opacity={selected ? .8 : .42} />
+  </group>;
+}
+
+function EvidenceRoutes({ gateColor }: { gateColor: string }) {
+  const route = (points: [number, number, number][], color: string) => <Line points={points} color={color} lineWidth={1.35} dashed dashSize={.18} gapSize={.12} transparent opacity={.58} />;
+  return <group>
+    {route([[-4.7, .09, -2.75], [-1.4, .09, -2.75], [.7, .09, 0]], COLOR.baseline)}
+    {route([[-4.7, .09, 2.75], [-1.4, .09, 2.75], [.7, .09, 0]], COLOR.candidate)}
+    {route([[.7, .09, 0], [3.2, .09, 0], [4.9, .09, 2.8]], COLOR.warn)}
+    {route([[4.9, .09, 2.8], [6.25, .09, 1.4], [7.75, .09, 0]], gateColor)}
+    {route([[4.9, .09, -2.8], [6.25, .09, -1.4], [7.75, .09, 0]], "#8e79bd")}
+  </group>;
+}
+
 function Room({ decision }: { decision: string | null }) {
   const gateColor = decision === "pass" ? COLOR.ok : decision === "warn" ? COLOR.warn : decision === "block" ? COLOR.fail : COLOR.waiting;
   return (
@@ -184,6 +210,20 @@ function Room({ decision }: { decision: string | null }) {
   );
 }
 
+function CameraRig() {
+  const controls = useRef<any>(null);
+  const { camera, size } = useThree();
+  useEffect(() => {
+    const orthographic = camera as OrthographicCamera;
+    orthographic.zoom = Math.min(size.width / 22.5, size.height / 13.5);
+    orthographic.updateProjectionMatrix();
+    camera.position.set(12, 15, 18);
+    controls.current?.target.set(0, .7, 0);
+    controls.current?.update();
+  }, [camera, size]);
+  return <OrbitControls ref={controls} makeDefault enablePan={false} enableZoom={false} target={[0, .7, 0]} minPolarAngle={.45} maxPolarAngle={1.08} minAzimuthAngle={-.75} maxAzimuthAngle={1.15} />;
+}
+
 function Scene({ tasks, state, selectedTask, selectedLane, reducedMotion, onSelect }: {
   tasks: TaskSummary[]; state: LabState; selectedTask: string | null; selectedLane: Lane;
   reducedMotion: boolean; onSelect: (id: string, lane: Lane) => void;
@@ -196,6 +236,7 @@ function Scene({ tasks, state, selectedTask, selectedLane, reducedMotion, onSele
       grading: all.some((item) => item.stage === "grading"),
     };
   }, [state.cases]);
+  const gateColor = state.decision === "pass" ? COLOR.ok : state.decision === "warn" ? COLOR.warn : state.decision === "block" ? COLOR.fail : COLOR.waiting;
   return (
     <>
       <color attach="background" args={["#dfe9e2"]} />
@@ -204,6 +245,12 @@ function Scene({ tasks, state, selectedTask, selectedLane, reducedMotion, onSele
       <hemisphereLight args={["#edf5ef", "#6e675c", 1.18]} />
       <directionalLight position={[4, 11, 7]} intensity={1.5} castShadow shadow-mapSize={[1024, 1024]} />
       <Room decision={state.decision} />
+      <StationZone position={[-4.7, .035, -2.75]} size={[3.1, 2.35]} color={COLOR.baseline} selected={activity.baseline > 0} />
+      <StationZone position={[-4.7, .035, 2.75]} size={[3.1, 2.35]} color={COLOR.candidate} selected={activity.candidate > 0} />
+      <StationZone position={[-.15, .035, 0]} size={[3.7, 3.2]} color="#596b7c" selected={activity.grading} />
+      <StationZone position={[4.9, .035, 2.8]} size={[2.85, 2.25]} color={COLOR.warn} selected={state.investigating.length > 0} />
+      <StationZone position={[4.9, .035, -2.8]} size={[2.85, 2.25]} color="#8e79bd" selected={state.status === "deciding"} />
+      <EvidenceRoutes gateColor={gateColor} />
       <ServerRack position={[-8.25, 0, -3.65]} color={COLOR.baseline} />
       <ServerRack position={[-7.35, 0, -3.65]} color={COLOR.candidate} />
       <Desk position={[-4.7, 0, -2.75]} color={COLOR.baseline} active={activity.baseline > 0} label="Baseline coding agent" detail={`${activity.baseline} active cases`} operator={{ skin: "#bd805d", hair: "#27201d", shirt: "#287f91" }} />
@@ -216,7 +263,7 @@ function Scene({ tasks, state, selectedTask, selectedLane, reducedMotion, onSele
           selected={selectedTask === task.id && selectedLane === lane} reducedMotion={reducedMotion} onSelect={onSelect} />
       )))}
       <ContactShadows position={[0, 0.02, 0]} opacity={0.34} scale={22} blur={2.8} far={5} />
-      <OrbitControls makeDefault enablePan={false} target={[0, 0.7, 0]} minDistance={10} maxDistance={24} minPolarAngle={0.65} maxPolarAngle={1.35} />
+      <CameraRig />
     </>
   );
 }
@@ -227,7 +274,7 @@ export default function ModelLab(props: {
 }) {
   const reducedMotion = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
   return (
-    <Canvas shadows camera={{ position: [11.5, 10.5, 13.5], fov: 40 }} dpr={[1, 1.6]} gl={{ preserveDrawingBuffer: true, antialias: true }} frameloop={reducedMotion ? "demand" : "always"}>
+    <Canvas orthographic shadows camera={{ position: [12, 15, 18], zoom: 42, near: .1, far: 100 }} dpr={[1, 1.6]} gl={{ preserveDrawingBuffer: true, antialias: true }} frameloop={reducedMotion ? "demand" : "always"}>
       <Scene {...props} reducedMotion={Boolean(reducedMotion)} />
     </Canvas>
   );
