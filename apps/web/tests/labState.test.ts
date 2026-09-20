@@ -42,7 +42,7 @@ describe("lab state reducer", () => {
     s = applyEvent(s, ev("policy.evaluated", { outcome: "block" }));
     s = applyEvent(s, ev("experiment.completed", { outcome: "block" }));
     expect(s.notifications.map((note) => note.title)).toEqual([
-      "Experiment complete",
+      "Autonomous audit complete",
       "Release policy evaluated",
       "Regression investigation started",
       "Autonomous mission started",

@@ -15,9 +15,9 @@ const TABS = ["Cases", "Trace", "Timeline", "Release"] as const;
 type Tab = (typeof TABS)[number];
 type JourneyState = "done" | "active" | "waiting" | "attention";
 
-function Journey({ status, completedRuns, totalRuns, pairCount, investigating, decision, githubStatus }: {
+function Journey({ status, completedRuns, totalRuns, pairCount, investigating, decision }: {
   status: string; completedRuns: number; totalRuns: number; pairCount: number;
-  investigating: number; decision: string | null; githubStatus: string;
+  investigating: number; decision: string | null;
 }) {
   const failed = status === "failed" || status === "cancelled";
   const runningDone = totalRuns > 0 && completedRuns >= totalRuns;
@@ -26,8 +26,8 @@ function Journey({ status, completedRuns, totalRuns, pairCount, investigating, d
     { label: "Paired agents", detail: `${completedRuns}/${totalRuns} lane executions`, state: failed ? "attention" : runningDone ? "done" : status === "running" ? "active" : "waiting" },
     { label: "Deterministic tests", detail: `${pairCount} pairs compared`, state: decision ? "done" : runningDone ? "active" : "waiting" },
     { label: "Investigation", detail: investigating ? `${investigating} under review` : pairCount ? "Evidence reconciled" : "Waiting for evidence", state: decision ? "done" : investigating ? "active" : pairCount ? "done" : "waiting" },
-    { label: "Release decision", detail: decision ? decision.toUpperCase() : "Policy pending", state: decision ? (decision === "block" ? "attention" : "done") : status === "deciding" ? "active" : "waiting" },
-    { label: "GitHub check", detail: githubStatus === "delivered" ? "Published" : githubStatus === "delivering" ? "Publishing" : "Optional handoff", state: githubStatus === "delivered" ? "done" : githubStatus === "delivering" ? "active" : githubStatus === "failed" ? "attention" : "waiting" },
+    { label: "Release decision", detail: decision ? `${decision.toUpperCase()} recorded` : "Policy pending", state: decision ? "done" : status === "deciding" ? "active" : "waiting" },
+    { label: "Evidence report", detail: decision ? "PDF and Markdown ready" : "Waiting for decision", state: decision ? "done" : "waiting" },
   ];
   return (
     <section className="journey" aria-label="Experiment journey">
@@ -132,14 +132,19 @@ export function ExperimentPage({ experimentId }: { experimentId: string }) {
         </div>
       </header>
 
-      {data.fixture_mode && <div className="simulation-banner"><strong>Simulation mode</strong><span>Scripted fixture providers are driving this saved rehearsal. These are not model results.</span></div>}
+      {data.fixture_mode && <div className="simulation-banner"><strong>Regression rehearsal</strong><span>The candidate fixture intentionally injects a tool failure so the autonomous investigation and blocking path can be demonstrated. These are not live-model results.</span></div>}
       {data.error && <p className="callout error-text">Experiment error: {data.error}</p>}
       {data.mission_plan && <section className="autopilot-plan" aria-label="Autonomous mission plan">
         <div><span className="eyebrow">Mission controller plan</span><strong>{data.mission_plan.brief}</strong><small>{data.mission_plan.reason}</small></div>
         <ol><li><b>{data.mission_plan.task_count}</b><span>signed tasks</span></li><li><b>{data.mission_plan.critical_tasks.length}</b><span>release critical</span></li><li><b>{data.mission_plan.categories.length}</b><span>work categories</span></li><li className="autonomous"><b>Autonomous</b><span>through report</span></li></ol>
       </section>}
 
-      <Journey status={state.status} completedRuns={completedRuns} totalRuns={totalRuns} pairCount={data.pairs.length} investigating={state.investigating.length} decision={state.decision} githubStatus={state.githubStatus} />
+      {state.status === "completed" && state.decision && <section className={`completion-banner ${state.decision}`} role="status">
+        <div><span className="eyebrow">Autonomous flow complete</span><strong>{state.decision === "block" ? "Migration blocked safely—not stalled." : state.decision === "warn" ? "Review recommended before migration." : "Migration passed the stored policy."}</strong><small>{state.decision === "block" ? "ReplayForge detected a critical regression, preserved the evidence, applied policy, and finished the report." : "The decision and supporting evidence are ready for review."}</small></div>
+        <a className="btn primary" href={`/api/experiments/${experimentId}/report.pdf`}>Download final report</a>
+      </section>}
+
+      <Journey status={state.status} completedRuns={completedRuns} totalRuns={totalRuns} pairCount={data.pairs.length} investigating={state.investigating.length} decision={state.decision} />
       <NotificationFeed notifications={state.notifications} onOpen={select} />
 
       <div className="command-grid">

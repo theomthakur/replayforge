@@ -202,7 +202,11 @@ export function applyEvent(state: LabState, event: ReplayEvent): LabState {
       break;
     case "experiment.completed":
       next.status = "completed";
-      next = notify(next, event, { severity: payload.outcome === "block" ? "warning" : "success", title: "Experiment complete", detail: `Decision: ${String(payload.outcome).toUpperCase()}` });
+      next = notify(next, event, {
+        severity: payload.outcome === "block" ? "warning" : "success",
+        title: "Autonomous audit complete",
+        detail: `${String(payload.outcome).toUpperCase()} recorded. The evidence report is ready.`,
+      });
       break;
     case "experiment.failed":
       next.status = "failed";
