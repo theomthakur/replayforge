@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from fastapi import APIRouter, Header, HTTPException, Request
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, Response
 from pydantic import BaseModel, Field
 from replayforge.cassettes import CassetteError, load_suite
 from replayforge.policy import MigrationPolicy
@@ -37,6 +37,7 @@ from replayforge_api.db import (
 )
 from replayforge_api.events import bus, serialize
 from replayforge_api.github import GitHubClient, GitHubError, check_run_payload, parse_pr_url, verify_signature
+from replayforge_api.pdf_report import render_pdf
 from replayforge_api.services import orchestrator
 
 router = APIRouter()
@@ -127,6 +128,8 @@ def available_suites() -> list[dict]:
                     "name": suite.cassette.suite.name,
                     "tasks": len(suite.cassette.tasks),
                     "digest": suite.digest,
+                    "source_repository_url": suite.cassette.suite.source_repository_url,
+                    "source_revision": suite.cassette.suite.source_revision,
                 }
             )
         except CassetteError as error:
@@ -594,6 +597,19 @@ def report(experiment_id: str) -> str:
         decision={**snap["decision"], "violations": snap["decision"]["violations"]},
         fixture_mode=snap["fixture_mode"],
         source_revision=snap["git_sha"],
+    )
+
+
+@router.get("/api/experiments/{experiment_id}/report.pdf")
+def report_pdf(experiment_id: str) -> Response:
+    snap = experiment_snapshot(experiment_id)
+    if not snap["decision"]:
+        raise HTTPException(409, "experiment has no decision yet")
+    content = render_pdf(snap, experiment_id)
+    return Response(
+        content=content,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="replayforge-{experiment_id}.pdf"'},
     )
 
 

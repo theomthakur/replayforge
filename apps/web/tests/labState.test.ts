@@ -35,6 +35,21 @@ describe("lab state reducer", () => {
     expect(s.notifications[0]).toMatchObject({ title: "Critical regression found", taskId: "pay", lane: "candidate" });
   });
 
+  it("surfaces autonomous workflow milestones without inventing state", () => {
+    let s = applyEvent(emptyState(), ev("experiment.started"));
+    s = applyEvent(s, ev("investigation.started", { task_id: "pay" }));
+    s = applyEvent(s, ev("policy.evaluated", { outcome: "block" }));
+    s = applyEvent(s, ev("experiment.completed", { outcome: "block" }));
+    expect(s.notifications.map((note) => note.title)).toEqual([
+      "Experiment complete",
+      "Release policy evaluated",
+      "Regression investigation started",
+      "Autonomous mission started",
+    ]);
+    expect(s.status).toBe("completed");
+    expect(s.decision).toBe("block");
+  });
+
   it("renders failed, cancelled and github failure states explicitly", () => {
     let s = applyEvent(emptyState(), ev("github.delivery.failed", { error: "401" }));
     expect(s.githubStatus).toBe("failed");

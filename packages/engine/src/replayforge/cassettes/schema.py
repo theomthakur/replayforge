@@ -126,6 +126,8 @@ class SuiteHeader(_Model):
     name: str
     description: str = ""
     repository_fixture: str
+    source_repository_url: str | None = None
+    source_revision: str | None = None
     setup_command: str | None = None
     default_timeout_seconds: int = Field(default=90, ge=5, le=900)
     default_limits: Limits = Field(default_factory=Limits)
@@ -191,6 +193,13 @@ def _check_safety(cassette: Cassette) -> None:
                 raise CassetteError("cassette text contains a value that looks like a secret")
     if cassette.suite.setup_command and not is_allowed_command(cassette.suite.setup_command):
         raise CassetteError(f"setup_command is not allowlisted: {cassette.suite.setup_command!r}")
+    if cassette.suite.source_repository_url and not re.fullmatch(
+        r"https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/?",
+        cassette.suite.source_repository_url,
+    ):
+        raise CassetteError("suite.source_repository_url must be an HTTPS GitHub repository URL")
+    if cassette.suite.source_revision and not re.fullmatch(r"[0-9a-f]{40}", cassette.suite.source_revision):
+        raise CassetteError("suite.source_revision must be a full 40-character Git commit SHA")
     for task in cassette.tasks:
         for grader in task.graders:
             if grader.type in ("command", "test_count") and not is_allowed_command(grader.command):

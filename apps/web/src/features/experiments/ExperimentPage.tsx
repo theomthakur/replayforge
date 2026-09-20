@@ -4,7 +4,7 @@ import { useState } from "react";
 import { api } from "../../api/client";
 import type { Lane } from "../../api/types";
 import { LabPanel } from "../model-lab/LabPanel";
-import { NotificationCenter } from "../notifications/NotificationCenter";
+import { NotificationCenter, NotificationFeed } from "../notifications/NotificationCenter";
 import { Timeline } from "../timeline/Timeline";
 import { TracePanel } from "../traces/TracePanel";
 import { CasesTable } from "./CasesTable";
@@ -47,9 +47,22 @@ function OperationsBrief({ baseline, candidate, completedRuns, totalRuns, state 
   state: ReturnType<typeof useExperiment>["state"];
 }) {
   const active = Object.values(state.cases).filter((item) => !["queued", "passed", "failed"].includes(item.stage));
+  const baselineActive = active.filter((item) => item.lane === "baseline").length;
+  const candidateActive = active.filter((item) => item.lane === "candidate").length;
+  const lanesFinished = completedRuns >= totalRuns && totalRuns > 0;
+  const missionFinished = ["completed", "failed", "cancelled"].includes(state.status);
+  const controllerStatus = state.status === "completed" ? "handoff complete" : state.status === "failed" ? "run failed" : state.status === "cancelled" ? "run cancelled" : ["unknown", "draft", "ready"].includes(state.status) ? "mission queued" : "coordinating run";
+  const roles = [
+    { name: "Mission controller", kind: "orchestrator", status: controllerStatus, active: !missionFinished && !["unknown", "draft", "ready"].includes(state.status) },
+    { name: "Baseline coding agent", kind: "model agent", status: baselineActive ? `${baselineActive} active case${baselineActive === 1 ? "" : "s"}` : lanesFinished ? "evidence stored" : missionFinished ? "stopped" : "waiting for work", active: baselineActive > 0 },
+    { name: "NVIDIA coding agent", kind: "model agent", status: candidateActive ? `${candidateActive} active case${candidateActive === 1 ? "" : "s"}` : lanesFinished ? "evidence stored" : missionFinished ? "stopped" : "waiting for work", active: candidateActive > 0 },
+    { name: "Evidence pipeline", kind: "deterministic", status: lanesFinished ? "checks complete" : active.some((item) => item.stage === "grading") ? "grading outputs" : missionFinished ? "stopped" : "watching traces", active: active.some((item) => item.stage === "grading") },
+    { name: "Regression investigator", kind: "hybrid", status: state.investigating.length ? `${state.investigating.length} under review` : Object.keys(state.findings).length ? `${Object.keys(state.findings).length} findings stored` : "waiting for evidence", active: state.investigating.length > 0 },
+    { name: "Release guardian", kind: "policy engine", status: state.decision ? `${state.decision.toUpperCase()} recorded` : state.status === "deciding" ? "applying guardrails" : "waiting for comparison", active: state.status === "deciding" },
+  ];
   return (
     <section className="panel operations-brief" aria-labelledby="brief-title">
-      <header><h2 id="brief-title">Operations brief</h2><span className="live-indicator"><i /> persisted state</span></header>
+      <header><h2 id="brief-title">Agent operations brief</h2><span className="live-indicator"><i /> persisted state</span></header>
       <div className="body">
         <div className="lane-card baseline-card"><span>Baseline lane</span><strong>{baseline}</strong></div>
         <div className="lane-card candidate-card"><span>NVIDIA candidate</span><strong>{candidate}</strong></div>
@@ -57,8 +70,16 @@ function OperationsBrief({ baseline, candidate, completedRuns, totalRuns, state 
           <div><span>Lane executions</span><strong>{completedRuns}/{totalRuns}</strong></div>
           <progress value={completedRuns} max={Math.max(totalRuns, 1)} />
         </div>
+        <div className="agent-roster">
+          <div className="agent-roster-heading"><span className="eyebrow">Who is doing what</span><small>Model agents act; deterministic controls verify and decide.</small></div>
+          {roles.map((role) => <div className={`agent-role ${role.active ? "active" : ""}`} key={role.name}>
+            <i aria-hidden="true" />
+            <span><strong>{role.name}</strong><small>{role.status}</small></span>
+            <b>{role.kind}</b>
+          </div>)}
+        </div>
         <div className="active-work">
-          <span className="eyebrow">Now on the floor</span>
+          <span className="eyebrow">Live work packets</span>
           {active.length ? active.slice(0, 4).map((item) => (
             <div className="active-item" key={`${item.taskId}-${item.lane}`}>
               <i className={item.lane} />
@@ -106,7 +127,7 @@ export function ExperimentPage({ experimentId }: { experimentId: string }) {
         </div>
         <div className="hero-actions">
           <NotificationCenter notifications={state.notifications} onOpen={select} />
-          <a className={`btn ${data.decision ? "" : "disabled"}`} href={data.decision ? `/api/experiments/${experimentId}/report.md` : undefined} target="_blank" rel="noreferrer">Export report</a>
+          <a className={`btn ${data.decision ? "" : "disabled"}`} href={data.decision ? `/api/experiments/${experimentId}/report.pdf` : undefined}>Download PDF</a>
           {running && <button className="btn danger" onClick={() => cancel.mutate()} disabled={cancel.isPending}>Stop run</button>}
         </div>
       </header>
@@ -115,6 +136,7 @@ export function ExperimentPage({ experimentId }: { experimentId: string }) {
       {data.error && <p className="callout error-text">Experiment error: {data.error}</p>}
 
       <Journey status={state.status} completedRuns={completedRuns} totalRuns={totalRuns} pairCount={data.pairs.length} investigating={state.investigating.length} decision={state.decision} githubStatus={state.githubStatus} />
+      <NotificationFeed notifications={state.notifications} onOpen={select} />
 
       <div className="command-grid">
         <LabPanel tasks={data.tasks} state={state} selectedTask={selectedTask} selectedLane={lane} onSelect={select} />
@@ -123,6 +145,15 @@ export function ExperimentPage({ experimentId }: { experimentId: string }) {
           <ComparisonWall snapshot={data} state={state} />
         </div>
       </div>
+
+      <section className={`deliverables ${data.decision ? "ready" : "waiting"}`} aria-labelledby="deliverables-title">
+        <div><span className="eyebrow">Automatic output</span><h2 id="deliverables-title">A decision your team can carry forward</h2><p>{data.decision ? "The evidence bundle is ready. The PDF is designed for review; Markdown preserves the portable technical record." : "ReplayForge generates the evidence bundle automatically as soon as the release guardian records a decision."}</p></div>
+        <div className="deliverable-actions">
+          <a className={`btn primary ${data.decision ? "" : "disabled"}`} href={data.decision ? `/api/experiments/${experimentId}/report.pdf` : undefined}>Download PDF report</a>
+          <a className={`btn ${data.decision ? "" : "disabled"}`} href={data.decision ? `/api/experiments/${experimentId}/report.md` : undefined} target="_blank" rel="noreferrer">Open Markdown evidence</a>
+          <button className="btn" disabled={!data.decision} onClick={() => setTab("Release")}>Publish GitHub handoff</button>
+        </div>
+      </section>
 
       <section className="details-deck">
         <nav className="tabs" role="tablist" aria-label="Experiment evidence">

@@ -25,3 +25,17 @@ export function NotificationCenter({ notifications, onOpen }: { notifications: N
     </div>
   );
 }
+
+export function NotificationFeed({ notifications, onOpen }: { notifications: Notification[]; onOpen: (taskId: string, lane?: Lane) => void }) {
+  if (notifications.length === 0) return null;
+  return <section className="notification-feed" aria-label="Latest workflow notifications">
+    <div><span className="eyebrow">Workflow notifications</span><small>Generated from persisted events</small></div>
+    <ol>{notifications.slice(0, 3).map((note) => <li key={note.id} className={note.severity}>
+      <i aria-hidden="true" />
+      <button onClick={() => note.taskId && onOpen(note.taskId, note.lane)} disabled={!note.taskId}>
+        <strong>{note.title}</strong><span>{note.detail}</span>
+      </button>
+      <b>{note.severity}</b>
+    </li>)}</ol>
+  </section>;
+}

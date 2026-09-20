@@ -1,0 +1,32 @@
+schema_version: "1.0"
+suite:
+  id: portfolio-optimization-real
+  name: Portfolio optimization · real repository
+  description: A pinned workload from Om's public portfolio optimization library.
+  repository_fixture: fixtures/repos/portfolio-optimization
+  source_repository_url: https://github.com/theomthakur/portfolio-optimization-library
+  source_revision: a480c68e5a500baa171c4632020e00f2476831c6
+  default_timeout_seconds: 90
+  default_limits: {max_steps: 12, max_wall_seconds: 120}
+tasks:
+  - id: portfolio-refactor-factory
+    category: refactor
+    description: Replace optimizer selection branching with a registry.
+    critical: true
+    prompt: |
+      Refactor src/run.py so optimizer construction is driven by a module-level dictionary named
+      OPTIMIZER_FACTORIES instead of the if/elif chain. Preserve all six optimizer choices and
+      their constructor arguments. Do not change any other file.
+    graders:
+      - {type: command, command: "python -m py_compile src/run.py", expected_exit_code: 0}
+      - {type: file_regex, path: src/run.py, pattern: "OPTIMIZER_FACTORIES\\s*="}
+      - {type: forbidden_paths, paths: ["README.md"]}
+  - id: portfolio-nav-risk-parity
+    category: navigation
+    description: Locate where risk-parity selection is wired into the CLI.
+    prompt: |
+      Find the file that exposes risk_parity as a command-line optimizer choice. Do not change
+      files. Call finish with exactly `file=<path relative to the repository root>`.
+    graders:
+      - {type: output_regex, pattern: "file=src/run\\.py\\b"}
+      - {type: forbidden_paths, paths: ["src/", "README.md"]}

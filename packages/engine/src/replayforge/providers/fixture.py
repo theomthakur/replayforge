@@ -19,7 +19,13 @@ from benchtrace.trace import TokenUsage, ToolCall, TraceRequest, TraceResponse
 
 from replayforge.cassettes.schema import Cassette, TaskSpec
 
-VARIANT_BREAKS = {"repair-discount": "malformed_arguments", "tool-find-timeout": "wrong_tool"}
+VARIANT_BREAKS = {
+    "repair-discount": "malformed_arguments",
+    "tool-find-timeout": "wrong_tool",
+    "portfolio-refactor-factory": "malformed_arguments",
+    "medicare-extract-npi-length": "malformed_arguments",
+    "equity-name-bps-denominator": "malformed_arguments",
+}
 FIXTURE_PROFILES = frozenset({"fixture/reference", "fixture/variant"})
 
 

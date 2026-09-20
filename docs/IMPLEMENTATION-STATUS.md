@@ -1,6 +1,6 @@
 # Implementation status
 
-Audience: Om and anyone continuing the build. Updated 17 September 2026.
+Audience: Om and anyone continuing the build. Updated 19 September 2026.
 
 Legend: ✅ built and verified · 🟡 built, not yet exercised against the real service · ⛔ blocked on an
 account or credential · ⬜ not started.
@@ -13,16 +13,16 @@ account or credential · ⬜ not started.
 | 1 Live Nebius/NVIDIA access | ⛔ | Provider, catalog discovery, NVIDIA filter and validation are built and unit-tested with mocked HTTP. `scripts/live_smoke.py` is ready. **Needs `NEBIUS_TOKEN_FACTORY_API_KEY`.** No live call has been made. |
 | 2 Five-case vertical slice | ✅ (fixture) · ⛔ (live) | CLI runs paired cases end to end with the fixture provider |
 | 3 Persistence and orchestration | ✅ | Idempotent creation, persisted events, SSE resume, cancel, resume without duplicate runs (API tests) |
-| 4 Grading, metrics, policy | ✅ | Full grader set, benchtrace McNemar and Wilson intervals, measurement labels, pass/warn/block, 20-case suite |
+| 4 Grading, metrics, policy | ✅ | Full grader set, benchtrace McNemar and Wilson intervals, measurement labels, pass/warn/block, 20-case synthetic suite plus three commit-pinned public-repository workloads |
 | 5 Investigation | ✅ rule-based · 🟡 model-based | Rule investigator classifies real fixture regressions with step references. Model investigator (strict JSON, validated references, rule fallback) is written but not wired to a live model. |
-| 6 API and accessible web app | ✅ | Setup, budget confirmation, persistent six-stage journey, evidence tabs, cases, traces, timeline and notifications. Component-tested against live event updates. |
-| 7 3D Model Lab | 🟡 | Realistic operations room with desks, workers, monitors, servers, test and policy stations, event-driven work packets, lazy loading, reduced-motion and no-WebGL fallbacks. **Still needs a final visual check in a normal browser.** |
+| 6 API and accessible web app | ✅ | Light evaluation-lab UI, setup, budget confirmation, persistent six-stage journey, evidence tabs, cases, traces, timeline, notifications, in-product presentation and system-design explainer. Component-tested against live event updates. |
+| 7 3D Model Lab | 🟡 | Light operations room with physical zone signs, desks, workers, monitors, servers, test and policy stations, event-driven work packets, lazy loading, reduced-motion and no-WebGL fallbacks. **Still needs a final visual check in a normal browser.** |
 | 8 GitHub release gate | 🟡 | Check-run upsert, HMAC webhooks and dedupe tested with mocks. **Needs `GITHUB_TOKEN` and a demo PR.** |
-| 9 Deployment and submission | ⬜ | Hosting, final live 20-case run, video, Devpost |
+| 9 Deployment and submission | ⬜ | Rules checklist written. Still needs public repository, hosting, final live NVIDIA run, real GitHub check, video and Devpost entry. |
 
-## Test counts (17 Sep)
+## Test counts (19 Sep)
 
-- Engine: 47 · API: 13 · Web: 9 (reducer, components, live page hydration)
+- Engine: 47 · API: 13 · Web: 11 (reducer, components, live page hydration, presentation and system design)
 - 20-case fixture experiment: about 21 s via CLI; through the API and SSE it completed with 40 persisted
   runs and 579 events.
 
@@ -36,7 +36,9 @@ account or credential · ⬜ not started.
 
 ## Next actions for Om
 
-1. Create a Nebius Token Factory project key; put it in `.env` locally. Never paste it into chat or git.
+1. Claim both Token Factory credit offers, create a project key and put it in `.env` locally. Never paste it
+   into chat or git.
 2. Run `make live-smoke`. It records the catalog, validates the first NVIDIA model and runs five paired cases.
-3. Create a small public demo repository with one PR and a fine-grained token with `checks:write`.
-4. Open `http://localhost:5173` in a normal browser to confirm the 3D lab renders.
+3. Make ReplayForge public, verify its license while signed out, and deploy a free judge-accessible build.
+4. Create a small public demo repository with one PR and a fine-grained token with `checks:write`.
+5. Open `http://localhost:5173` in a normal browser to confirm the 3D lab renders.

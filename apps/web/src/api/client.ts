@@ -20,9 +20,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   models: () => request<ModelCatalog>("/api/models"),
-  suites: () => request<{ file: string; id?: string; name?: string; tasks?: number; digest?: string; error?: string }[]>("/api/suites/available"),
+  suites: () => request<{ file: string; id?: string; name?: string; tasks?: number; digest?: string; source_repository_url?: string | null; source_revision?: string | null; error?: string }[]>("/api/suites/available"),
   createSuite: (path: string) => request<{ id: string; digest: string; name: string; case_count: number }>("/api/suites", { method: "POST", body: JSON.stringify({ path }) }),
-  suite: (id: string) => request<{ id: string; definition: { tasks: { id: string; category: string; critical?: boolean; description: string }[] } }>(`/api/suites/${id}`),
+  suite: (id: string) => request<{ id: string; definition: { suite: { name: string; description: string; source_repository_url?: string | null; source_revision?: string | null }; tasks: { id: string; category: string; critical?: boolean; description: string }[] } }>(`/api/suites/${id}`),
   estimate: (body: unknown) => request<Record<string, number | boolean | string>>("/api/experiments/estimate", { method: "POST", body: JSON.stringify(body) }),
   createExperiment: (body: unknown, key: string) =>
     request<ExperimentSnapshot>("/api/experiments", { method: "POST", body: JSON.stringify(body), headers: { "Idempotency-Key": key } }),

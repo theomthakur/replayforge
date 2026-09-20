@@ -60,6 +60,21 @@ def test_secret_in_prompt_rejected(root):
         parse_cassette(raw)
 
 
+def test_real_repository_metadata_is_preserved(root):
+    suite = load_suite(root / "fixtures/suites/portfolio-optimization.yaml")
+    header = suite.cassette.suite
+    assert header.source_repository_url == "https://github.com/theomthakur/portfolio-optimization-library"
+    assert header.source_revision == "a480c68e5a500baa171c4632020e00f2476831c6"
+
+
+def test_invalid_repository_metadata_is_rejected(root):
+    raw = _raw(root)
+    raw["suite"]["source_repository_url"] = "http://example.com/not-github"
+    raw["suite"]["source_revision"] = "main"
+    with pytest.raises(CassetteError, match="HTTPS GitHub"):
+        parse_cassette(raw)
+
+
 @pytest.mark.parametrize(
     ("command", "allowed"),
     [

@@ -24,6 +24,11 @@ a cheaper price. ReplayForge measures all of it on the same versioned tasks.
 1. **Cassette suite.** Versioned coding tasks over a repository fixture, each with deterministic graders
    (command exit, test counts, protected paths, file checks, tool-call contracts, output checks). The suite
    and fixture are hashed into an immutable digest.
+
+The bundled workload picker includes the 20-case synthetic reliability suite plus three small,
+commit-pinned snapshots of public repositories owned by the project author: portfolio optimization,
+Medicare claims analytics, and equity-alpha research. The UI links each snapshot to its source repository
+and exact Git revision; only the files needed for deterministic evaluation are copied into the fixture.
 2. **Paired runs.** Every task runs on both lanes with identical prompts, tools and limits, each in a fresh
    sandbox copy of the fixture.
 3. **Tests outrank opinions.** Graders decide correctness. No model grades itself.
@@ -37,6 +42,11 @@ a cheaper price. ReplayForge measures all of it on the same versioned tasks.
 7. **Release gate.** One GitHub check run per experiment, updated rather than duplicated on retry.
 8. **Reliability operations floor.** A persistent workflow journey, accessible evidence views and a
    realistic 3D operations room are all driven by the same stored event log.
+
+The app also includes a judge-ready **Presentation** route and an interactive **System design** route.
+The detailed engineering design lives in [docs/SYSTEM-DESIGN.md](docs/SYSTEM-DESIGN.md). The rules-based
+submission checklist and credit plan live in
+[docs/SUBMISSION-READINESS.md](docs/SUBMISSION-READINESS.md).
 
 ## Built on benchtrace
 
@@ -83,9 +93,9 @@ packages/engine/     cassettes, sandbox + tools, providers (Nebius, fixture), ag
                      graders, metrics, policy, investigation, report, CLI
 apps/api/            FastAPI control plane: persistence, orchestration, SSE, GitHub gate
 apps/web/            React + TypeScript app, accessible views and the 3D Model Lab
-fixtures/            demo repository, 20-task suite, reference solutions for the fixture provider
+fixtures/            synthetic suite, commit-pinned public-repository snapshots, reference solutions
 scripts/             live Nebius smoke test
-docs/                architecture, security, demo, disclosure, implementation status
+docs/                system design, submission readiness, security, demo, disclosure, implementation status
 ```
 
 ## Status

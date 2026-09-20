@@ -10,6 +10,7 @@ dependencies = [
   "uvicorn==0.35.0",
   "SQLAlchemy==2.0.43",
   "sse-starlette==3.0.2",
+  "reportlab==4.4.3",
 ]
 
 [build-system]

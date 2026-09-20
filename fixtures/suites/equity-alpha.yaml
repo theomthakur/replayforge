@@ -1,0 +1,31 @@
+schema_version: "1.0"
+suite:
+  id: equity-alpha-real
+  name: Equity alpha research · real repository
+  description: A pinned workload from Om's public quantitative research project.
+  repository_fixture: fixtures/repos/equity-alpha
+  source_repository_url: https://github.com/theomthakur/equity-alpha-research
+  source_revision: 08eb314efc0e2e493305eb0d54e84099c6f9ea3b
+  default_timeout_seconds: 90
+  default_limits: {max_steps: 10, max_wall_seconds: 120}
+tasks:
+  - id: equity-name-bps-denominator
+    category: refactor
+    description: Replace a repeated finance conversion literal with a named invariant.
+    critical: true
+    prompt: |
+      In src/backtest/costs.py, define BASIS_POINTS_DENOMINATOR = 10_000 at module level and use
+      it in both basis-point conversions. Preserve behavior and do not modify other files.
+    graders:
+      - {type: command, command: "python -m py_compile src/backtest/costs.py", expected_exit_code: 0}
+      - {type: file_regex, path: src/backtest/costs.py, pattern: "BASIS_POINTS_DENOMINATOR\\s*=\\s*10_000"}
+      - {type: forbidden_paths, paths: ["README.md"]}
+  - id: equity-nav-monotonicity
+    category: navigation
+    description: Locate the runtime guard that prevents costs increasing returns.
+    prompt: |
+      Locate the file containing the cost-model monotonicity assertion. Do not change files. Call
+      finish with exactly `file=<path relative to the repository root>`.
+    graders:
+      - {type: output_regex, pattern: "file=src/backtest/costs\\.py\\b"}
+      - {type: forbidden_paths, paths: ["src/", "README.md"]}

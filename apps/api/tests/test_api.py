@@ -52,6 +52,14 @@ def test_health_ready_and_models_report_missing_keys(client):
     assert models["nebius"]["configured"] is False and len(models["fixture"]) == 2
 
 
+def test_real_repository_workloads_expose_pinned_provenance(client):
+    suites = {item["file"]: item for item in client.get("/api/suites/available").json()}
+    portfolio = suites["portfolio-optimization.yaml"]
+    assert portfolio["source_repository_url"] == "https://github.com/theomthakur/portfolio-optimization-library"
+    assert portfolio["source_revision"] == "a480c68e5a500baa171c4632020e00f2476831c6"
+    assert portfolio["tasks"] == 2
+
+
 def test_idempotent_creation(client):
     first = _create(client, ["repair-slug"], key="abc").json()
     second = _create(client, ["repair-slug"], key="abc").json()
@@ -100,6 +108,10 @@ def test_full_fixture_experiment_persists_events_pairs_and_decision(client):
     assert any(not grade["passed"] for grade in trace["grades"])
     report = client.get(f"/api/experiments/{experiment['id']}/report.md").text
     assert "Fixture mode" in report and "BLOCK" in report
+    pdf = client.get(f"/api/experiments/{experiment['id']}/report.pdf")
+    assert pdf.status_code == 200 and pdf.headers["content-type"] == "application/pdf"
+    assert pdf.headers["content-disposition"].endswith(f'replayforge-{experiment["id"]}.pdf"')
+    assert pdf.content.startswith(b"%PDF-") and len(pdf.content) > 2_000
 
 
 def test_resume_does_not_duplicate_completed_runs(client):

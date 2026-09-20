@@ -117,6 +117,7 @@ export function applyEvent(state: LabState, event: ReplayEvent): LabState {
     case "experiment.started":
     case "experiment.resumed":
       next.status = "running";
+      next = notify(next, event, { severity: "info", title: event.type === "experiment.resumed" ? "Mission resumed" : "Autonomous mission started", detail: "Both coding-agent lanes are now running under the stored limits." });
       break;
     case "case.queued": {
       const taskId = str(payload.task_id);
@@ -164,6 +165,7 @@ export function applyEvent(state: LabState, event: ReplayEvent): LabState {
     case "investigation.started": {
       const taskId = str(payload.task_id);
       if (taskId && !next.investigating.includes(taskId)) next.investigating = [...next.investigating, taskId];
+      if (taskId) next = notify(next, event, { severity: "warning", title: "Regression investigation started", detail: `${taskId}: reconciling paired evidence`, taskId, lane: "candidate" });
       break;
     }
     case "investigation.completed": {
@@ -180,6 +182,7 @@ export function applyEvent(state: LabState, event: ReplayEvent): LabState {
     case "policy.evaluated":
       next.status = "deciding";
       next.decision = payload.outcome as LabState["decision"];
+      next = notify(next, event, { severity: payload.outcome === "pass" ? "success" : "warning", title: "Release policy evaluated", detail: `${String(payload.outcome).toUpperCase()} is now backed by stored evidence.` });
       break;
     case "experiment.completed":
       next.status = "completed";
@@ -191,6 +194,7 @@ export function applyEvent(state: LabState, event: ReplayEvent): LabState {
       break;
     case "experiment.cancelled":
       next.status = "cancelled";
+      next = notify(next, event, { severity: "warning", title: "Experiment cancelled", detail: "Completed evidence remains available for inspection." });
       break;
     case "github.delivery.started":
       next.githubStatus = "delivering";
