@@ -60,6 +60,29 @@ def test_real_repository_workloads_expose_pinned_provenance(client):
     assert portfolio["tasks"] == 2
 
 
+def test_autopilot_plans_and_starts_from_one_goal(client):
+    suite = client.post("/api/suites", json={"path": "portfolio-optimization.yaml"}).json()
+    response = client.post(
+        "/api/experiments/autopilot",
+        headers={"Idempotency-Key": "autopilot-test"},
+        json={
+            "suite_id": suite["id"],
+            "brief": "Audit release-critical changes with zero regression",
+            "baseline": {"provider": "fixture", "model": "fixture/reference"},
+            "candidate": {"provider": "fixture", "model": "fixture/variant"},
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["plan"]["task_ids"] == ["portfolio-refactor-factory"]
+    assert body["plan"]["policy"]["max_pass_rate_drop"] == 0
+    snapshot = _wait(client, body["experiment"]["id"])
+    assert snapshot["status"] == "completed"
+    assert snapshot["decision"]["outcome"] == "block"
+    event_types = [event["type"] for event in client.get(f"/api/experiments/{snapshot['id']}/event-log").json()]
+    assert "mission.planned" in event_types
+
+
 def test_idempotent_creation(client):
     first = _create(client, ["repair-slug"], key="abc").json()
     second = _create(client, ["repair-slug"], key="abc").json()

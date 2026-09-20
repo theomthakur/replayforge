@@ -134,6 +134,10 @@ export function ExperimentPage({ experimentId }: { experimentId: string }) {
 
       {data.fixture_mode && <div className="simulation-banner"><strong>Simulation mode</strong><span>Scripted fixture providers are driving this saved rehearsal. These are not model results.</span></div>}
       {data.error && <p className="callout error-text">Experiment error: {data.error}</p>}
+      {data.mission_plan && <section className="autopilot-plan" aria-label="Autonomous mission plan">
+        <div><span className="eyebrow">Mission controller plan</span><strong>{data.mission_plan.brief}</strong><small>{data.mission_plan.reason}</small></div>
+        <ol><li><b>{data.mission_plan.task_count}</b><span>signed tasks</span></li><li><b>{data.mission_plan.critical_tasks.length}</b><span>release critical</span></li><li><b>{data.mission_plan.categories.length}</b><span>work categories</span></li><li className="autonomous"><b>Autonomous</b><span>through report</span></li></ol>
+      </section>}
 
       <Journey status={state.status} completedRuns={completedRuns} totalRuns={totalRuns} pairCount={data.pairs.length} investigating={state.investigating.length} decision={state.decision} githubStatus={state.githubStatus} />
       <NotificationFeed notifications={state.notifications} onOpen={select} />

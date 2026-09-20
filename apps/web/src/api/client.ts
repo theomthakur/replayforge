@@ -26,6 +26,12 @@ export const api = {
   estimate: (body: unknown) => request<Record<string, number | boolean | string>>("/api/experiments/estimate", { method: "POST", body: JSON.stringify(body) }),
   createExperiment: (body: unknown, key: string) =>
     request<ExperimentSnapshot>("/api/experiments", { method: "POST", body: JSON.stringify(body), headers: { "Idempotency-Key": key } }),
+  autopilot: (body: unknown, key: string) =>
+    request<{ experiment: ExperimentSnapshot; plan: { task_ids: string[]; task_count: number; reason: string } }>("/api/experiments/autopilot", {
+      method: "POST",
+      body: JSON.stringify(body),
+      headers: { "Idempotency-Key": key },
+    }),
   experiments: () => request<{ id: string; status: string; created_at: string; fixture_mode: boolean; outcome: string | null; baseline: { model: string }; candidate: { model: string } }[]>("/api/experiments"),
   experiment: (id: string) => request<ExperimentSnapshot>(`/api/experiments/${id}`),
   start: (id: string) => request<{ started: boolean }>(`/api/experiments/${id}/start`, { method: "POST" }),

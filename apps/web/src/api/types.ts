@@ -92,6 +92,15 @@ export interface ExperimentSnapshot {
   budget: Record<string, unknown>;
   git_sha: string | null;
   pull_request_url: string | null;
+  mission_plan?: {
+    brief: string;
+    task_ids: string[];
+    task_count: number;
+    categories: string[];
+    critical_tasks: string[];
+    reason: string;
+    policy: Record<string, unknown>;
+  } | null;
   tasks: TaskSummary[];
   runs: RunSummary[];
   pairs: Pair[];

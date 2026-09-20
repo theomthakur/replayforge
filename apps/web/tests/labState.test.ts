@@ -36,7 +36,8 @@ describe("lab state reducer", () => {
   });
 
   it("surfaces autonomous workflow milestones without inventing state", () => {
-    let s = applyEvent(emptyState(), ev("experiment.started"));
+    let s = applyEvent(emptyState(), ev("mission.planned", { task_count: 2, reason: "matched the goal" }));
+    s = applyEvent(s, ev("experiment.started"));
     s = applyEvent(s, ev("investigation.started", { task_id: "pay" }));
     s = applyEvent(s, ev("policy.evaluated", { outcome: "block" }));
     s = applyEvent(s, ev("experiment.completed", { outcome: "block" }));
@@ -45,6 +46,7 @@ describe("lab state reducer", () => {
       "Release policy evaluated",
       "Regression investigation started",
       "Autonomous mission started",
+      "Mission planned autonomously",
     ]);
     expect(s.status).toBe("completed");
     expect(s.decision).toBe("block");

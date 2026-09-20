@@ -89,6 +89,15 @@ export function hydrate(snapshot: ExperimentSnapshot): LabState {
     state.githubStatus = snapshot.decision.delivery_status === "delivered" ? "delivered" : snapshot.decision.delivery_status === "failed" ? "failed" : "idle";
     state.githubUrl = snapshot.decision.github_check_url;
   }
+  if (snapshot.mission_plan) {
+    state.notifications.push({
+      id: `mission-plan-${snapshot.id}`,
+      seq: 0,
+      severity: "info",
+      title: "Mission planned autonomously",
+      detail: `${snapshot.mission_plan.task_count} signed task${snapshot.mission_plan.task_count === 1 ? "" : "s"} selected · ${snapshot.mission_plan.reason}`,
+    });
+  }
   return state;
 }
 
@@ -114,6 +123,13 @@ export function applyEvent(state: LabState, event: ReplayEvent): LabState {
   let next: LabState = { ...state, lastSeq: event.seq };
   const payload = event.payload;
   switch (event.type) {
+    case "mission.planned":
+      next = notify(next, event, {
+        severity: "info",
+        title: "Mission planned autonomously",
+        detail: `${String(payload.task_count)} signed task${payload.task_count === 1 ? "" : "s"} selected · ${String(payload.reason)}`,
+      });
+      break;
     case "experiment.started":
     case "experiment.resumed":
       next.status = "running";

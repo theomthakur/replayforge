@@ -67,7 +67,7 @@ export function SetupPage() {
   const [estimate, setEstimate] = useState<Record<string, number | boolean | string> | null>(null);
   const [confirmOver, setConfirmOver] = useState(false);
   const [brief, setBrief] = useState("Compare the candidate on release-critical bug fixes and block any regression.");
-  const [controllerReply, setControllerReply] = useState("Tell me the migration risk you want to evaluate. I will prepare the workload and guardrails for review.");
+  const [controllerReply, setControllerReply] = useState("Give me one goal. I will plan the workload, enforce the budget, dispatch both coding agents, investigate the evidence and produce the release decision.");
   const [reviewOpen, setReviewOpen] = useState(false);
 
   const nebius = models.data?.nebius;
@@ -91,6 +91,13 @@ export function SetupPage() {
   const body = () => ({
     suite_id: suiteRow.data?.id, baseline: lane(baseline), candidate: lane(candidate), policy,
     task_ids: selected ?? [], pull_request_url: prUrl || null, confirm_budget: confirmOver,
+  });
+  const autopilotBody = () => ({
+    suite_id: suiteRow.data?.id,
+    brief,
+    baseline: lane(baseline),
+    candidate: lane(candidate),
+    pull_request_url: prUrl || null,
   });
   const fixtureMode = baseline.startsWith("fixture|") || candidate.startsWith("fixture|");
 
@@ -127,6 +134,14 @@ export function SetupPage() {
     },
     onSuccess: (created) => navigate(`/experiments/${created.id}`),
   });
+  const autopilot = useMutation({
+    mutationFn: () => api.autopilot(autopilotBody(), crypto.randomUUID()),
+    onSuccess: ({ experiment }) => navigate(`/experiments/${experiment.id}`),
+    onError: (error) => {
+      setReviewOpen(true);
+      setControllerReply(`Autopilot paused safely: ${(error as Error).message}. Open advanced controls to resolve it.`);
+    },
+  });
 
   const numberField = (key: keyof typeof policy, label: string, hint: string, step = 0.01) => (
     <div className="field">
@@ -151,23 +166,33 @@ export function SetupPage() {
       </section>
 
       <section className="operation-guide" aria-labelledby="operation-guide-title">
-        <div className="operation-guide-heading"><span className="eyebrow">What happens after launch</span><h2 id="operation-guide-title">A supervised agent mission, not a single model call</h2><p>You choose the work and safety rules once. ReplayForge handles the paired execution, verification, investigation and release recommendation.</p></div>
+        <div className="operation-guide-heading"><span className="eyebrow">What happens after launch</span><h2 id="operation-guide-title">One goal starts the complete agent mission</h2><p>The mission controller plans from signed tasks. Coding agents execute in parallel; evidence, investigation, policy and reporting continue without another prompt.</p></div>
         <ol>{AGENT_STAGES.map((stage) => <li key={stage.name}><span>{stage.mark}</span><div><strong>{stage.name}</strong><small>{stage.detail}</small></div></li>)}</ol>
       </section>
 
       <section className="mission-chat" aria-labelledby="mission-chat-title">
-        <div className="mission-chat-copy"><span className="eyebrow">Conversational control plane</span><h2 id="mission-chat-title">Brief the mission controller</h2><p>Describe the risk in plain language. The controller prepares a bounded workload and suggested policy; you retain one review before autonomous execution.</p><div className="mission-suggestions">{["Critical bug fixes, zero regression", "Full reliability sweep", "Tool-use and recovery behavior", "Prioritize lower cost"].map((suggestion) => <button type="button" key={suggestion} onClick={() => setBrief(suggestion)}>{suggestion}</button>)}</div></div>
+        <div className="mission-chat-copy"><span className="eyebrow">Autonomous control plane</span><h2 id="mission-chat-title">Give the mission controller one goal</h2><p>Choose the codebase and state the outcome. ReplayForge handles planning through the final downloadable decision; human approval returns only for an unsafe budget or external publication.</p><div className="mission-suggestions">{["Critical changes, zero regression", "Full reliability sweep", "Tool-use and recovery behavior", "Prioritize lower cost"].map((suggestion) => <button type="button" key={suggestion} onClick={() => setBrief(suggestion)}>{suggestion}</button>)}</div></div>
         <div className="mission-console">
           <div className="controller-message"><img src="/favicon.svg" alt="" /><span><strong>Mission controller</strong><small>{controllerReply}</small></span></div>
+          <label htmlFor="autopilot-suite">Repository workload</label>
+          <select id="autopilot-suite" value={suiteFile} onChange={(event) => { setSuiteFile(event.target.value); setSelected(null); setEstimate(null); }}>
+            {(suites.data ?? []).map((suite) => <option key={suite.file} value={suite.file} disabled={Boolean(suite.error)}>{suite.name ?? suite.file}</option>)}
+          </select>
+          {sourceRepository && <div className="repository-provenance"><span>Commit-pinned source</span><a href={sourceRepository} target="_blank" rel="noreferrer">{sourceRepository.replace("https://github.com/", "")}</a>{sourceRevision && <code>{sourceRevision.slice(0, 8)}</code>}</div>}
           <label htmlFor="mission-brief">Your migration brief</label>
           <textarea id="mission-brief" value={brief} onChange={(event) => setBrief(event.target.value)} rows={3} />
-          <button className="btn primary" type="button" onClick={briefController} disabled={!brief.trim()}>Prepare mission</button>
-          <small className="controller-boundary">The planner may select work and suggest limits. It cannot alter graders or override the stored release policy.</small>
+          <button className="btn primary autopilot-launch" type="button" onClick={() => autopilot.mutate()} disabled={!brief.trim() || !suiteRow.data || autopilot.isPending}>
+            {autopilot.isPending ? "Mission controller is dispatching…" : "Run autonomous audit"}
+          </button>
+          <button className="text-action" type="button" onClick={briefController}>Preview plan or change advanced controls</button>
+          <div className="autopilot-scope"><span>Plans signed tasks</span><span>Runs both agents</span><span>Grades evidence</span><span>Investigates drift</span><span>Applies policy</span><span>Builds report</span></div>
+          <small className="controller-boundary">The controller cannot invent tasks, weaken graders, exceed the provider-call budget, or publish externally without configured authority.</small>
+          {autopilot.error && <p className="error-text">{(autopilot.error as Error).message}</p>}
         </div>
       </section>
 
       <details className="mission-review" open={reviewOpen} onToggle={(event) => setReviewOpen(event.currentTarget.open)}>
-      <summary><span><b>Review prepared mission</b><small>Tasks, model lanes, deterministic guardrails and run envelope</small></span><span><strong>{selectedTaskIds.length}</strong> paired tasks</span></summary>
+      <summary><span><b>Advanced controls</b><small>Optional manual task, model, policy and budget configuration</small></span><span><strong>{selectedTaskIds.length}</strong> available tasks</span></summary>
       <div className="grid-setup">
       <section className="panel" aria-labelledby="setup-title">
         <header><h2 id="setup-title">Configure the agent mission</h2><span className="eyebrow">Workload and lanes</span></header>

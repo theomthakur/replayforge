@@ -204,6 +204,64 @@ class ExperimentBody(BaseModel):
     confirm_budget: bool = False
 
 
+class AutopilotBody(BaseModel):
+    suite_id: str
+    brief: str = Field(min_length=3, max_length=1000)
+    baseline: LaneBody
+    candidate: LaneBody
+    pull_request_url: str | None = None
+
+
+def _mission_plan(suite, brief: str) -> tuple[list[str], MigrationPolicy, dict]:
+    """Translate one human goal into a bounded, explainable execution plan.
+
+    Task selection is deliberately deterministic: the mission controller may choose from the
+    signed cassette, but it cannot invent tasks, graders, tools, or policy fields.
+    """
+
+    text = brief.lower()
+    category_terms = {
+        "bug_fix": ("bug", "repair", "fix", "production"),
+        "tool_use": ("tool", "command"),
+        "navigation": ("find", "locate", "navigation", "repository"),
+        "test_generation": ("test", "coverage"),
+        "refactor": ("refactor", "maintain", "cleanup"),
+        "recovery": ("recover", "failure", "resilien"),
+    }
+    categories = {category for category, terms in category_terms.items() if any(term in text for term in terms)}
+    critical_only = any(term in text for term in ("critical", "release", "production"))
+    all_tasks = list(suite.cassette.tasks)
+    if any(term in text for term in ("all", "full", "every", "entire", "complete")):
+        selected = all_tasks
+    else:
+        selected = [
+            task
+            for task in all_tasks
+            if (not critical_only or task.critical) and (not categories or task.category in categories)
+        ]
+        if not selected:
+            selected = [task for task in all_tasks if task.critical] or all_tasks
+
+    strict = any(term in text for term in ("strict", "no regression", "zero regression"))
+    policy = MigrationPolicy(
+        max_pass_rate_drop=0 if strict else 0.02,
+        critical_tasks_must_pass="allow critical" not in text,
+        max_p95_latency_ms=15000,
+        require_lower_cost_per_success=any(term in text for term in ("cost", "cheaper", "efficient")),
+        max_provider_error_rate=0.02,
+    )
+    plan = {
+        "brief": brief,
+        "task_ids": [task.id for task in selected],
+        "task_count": len(selected),
+        "categories": sorted({task.category for task in selected}),
+        "critical_tasks": [task.id for task in selected if task.critical],
+        "reason": "full workload requested" if len(selected) == len(all_tasks) else "matched the goal to signed cassette tasks",
+        "policy": policy.model_dump(),
+    }
+    return plan["task_ids"], policy, plan
+
+
 def _loaded_suite(suite_id: str):
     with session_scope() as session:
         row = session.get(Suite, suite_id)
@@ -291,6 +349,35 @@ async def create_experiment(body: ExperimentBody, idempotency_key: str | None = 
     return experiment_snapshot(experiment_id)
 
 
+@router.post("/api/experiments/autopilot")
+async def launch_autopilot(body: AutopilotBody, idempotency_key: str | None = Header(default=None)) -> dict:
+    """Plan, validate, create, and start a complete evaluation from one goal."""
+
+    suite = _loaded_suite(body.suite_id)
+    task_ids, policy, plan = _mission_plan(suite, body.brief)
+    created = await create_experiment(
+        ExperimentBody(
+            suite_id=body.suite_id,
+            baseline=body.baseline,
+            candidate=body.candidate,
+            policy=policy,
+            task_ids=task_ids,
+            pull_request_url=body.pull_request_url,
+        ),
+        idempotency_key,
+    )
+    experiment_id = created["id"]
+    bus.publish(
+        experiment_id,
+        "mission.planned",
+        plan,
+        actor_type="agent",
+        actor_id="mission-controller",
+    )
+    orchestrator.start(experiment_id)
+    return {"experiment": experiment_snapshot(experiment_id), "plan": plan}
+
+
 @router.get("/api/experiments")
 def list_experiments() -> list[dict]:
     with session_scope() as session:
@@ -332,6 +419,12 @@ def experiment_snapshot(experiment_id: str) -> dict:
         )
         metrics = session.scalars(select(Metric).where(Metric.experiment_id == experiment_id)).all()
         decision = session.scalar(select(ReleaseDecision).where(ReleaseDecision.experiment_id == experiment_id))
+        mission_event = session.scalar(
+            select(Event)
+            .where(Event.experiment_id == experiment_id, Event.type == "mission.planned")
+            .order_by(Event.seq.desc())
+            .limit(1)
+        )
         last_seq = session.scalar(
             select(Event.seq).where(Event.experiment_id == experiment_id).order_by(Event.seq.desc()).limit(1)
         )
@@ -352,6 +445,7 @@ def experiment_snapshot(experiment_id: str) -> dict:
             "budget": experiment.budget_json,
             "git_sha": experiment.git_sha,
             "pull_request_url": experiment.pull_request_url,
+            "mission_plan": mission_event.payload_json if mission_event else None,
             "tasks": [
                 {
                     "id": t["id"],

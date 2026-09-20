@@ -8,9 +8,9 @@ previous real run, labelled as a previous run.
 
 1. **0:00 to 0:20, problem.** Benchmarks show how a model answers prompts, not whether our coding agent
    still picks the right tools and passes its tests after a migration.
-2. **0:20 to 0:40, setup.** Choose **Portfolio optimization · real repository** and point out the linked
-   GitHub repository, pinned commit, suite digest, baseline model, live NVIDIA model from the Token Factory
-   catalog, migration policy and budget estimate.
+2. **0:20 to 0:40, setup.** Choose **Portfolio optimization · real repository**, enter one outcome, and
+   press **Run autonomous audit**. Point out the linked repository and pinned commit. The mission controller
+   selects signed tasks and guardrails, validates the budget, and dispatches both lanes without a manual wizard.
 3. **0:40 to 1:25, parallel run.** Start. Work packets enter the signed baseline and NVIDIA lanes in the
    Model Lab only as events arrive.
    Open one live trace: tool calls and sandbox output.

@@ -7,6 +7,12 @@ model on Nebius Token Factory, executes both agents' work in isolated sandboxes,
 deterministic tests, investigates regressions, and turns a stored policy into a pass, warn or block
 decision that can be published to a GitHub pull request.
 
+The default UI is goal-driven: choose a commit-pinned repository workload, state the migration goal,
+and start one autonomous audit. The mission controller selects only signed cassette tasks, derives the
+bounded policy, validates the provider-call budget, dispatches both coding agents, investigates drift,
+applies the release gate, and generates the report. Manual configuration remains available as an
+advanced path; exceeding the budget or publishing externally still requires explicit authority.
+
 > Built for the Nebius x NVIDIA Global AI Hackathon 2026, Coding and Agentic Engineering track.
 > ReplayForge is an evaluation prototype, not a secure production code-execution platform.
 
