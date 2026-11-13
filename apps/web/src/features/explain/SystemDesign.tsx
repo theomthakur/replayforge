@@ -9,7 +9,7 @@ export function SystemDesign() {
       <span className="architecture-down">↓</span>
       <div className="architecture-row"><Boundary title="FastAPI control plane" detail="idempotency · orchestration · event log" tone="core" /><i>→</i><Boundary title="SQLite" detail="experiments · runs · traces · events" /></div>
       <span className="architecture-down">↓</span>
-      <div className="architecture-row three"><Boundary title="Baseline provider" detail="current model or labelled fixture" /><Boundary title="NVIDIA candidate" detail="live Nebius Token Factory catalog" tone="candidate-node" /><Boundary title="Fresh sandboxes" detail="bounded tools · isolated repository copy" /></div>
+      <div className="architecture-row three"><Boundary title="Baseline provider" detail="current model or labelled fixture" /><Boundary title="Candidate provider" detail="local, Nebius or labelled fixture" tone="candidate-node" /><Boundary title="Fresh sandboxes" detail="bounded tools · isolated repository copy" /></div>
       <span className="architecture-down">↓</span>
       <div className="architecture-row"><Boundary title="Deterministic evidence" detail="tests · contracts · metrics · investigation" tone="evidence" /><i>→</i><Boundary title="GitHub release gate" detail="pass · warn · block" tone="gate" /></div>
     </div></section>

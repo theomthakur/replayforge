@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import ipaddress
+import os
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import urlsplit
 
-from benchtrace.providers import Provider, ProviderConfig, provider_for_model
+from benchtrace.providers import OpenAICompatibleProvider, Provider, ProviderConfig, provider_for_model
 from benchtrace.providers.pricing import PricingTable, load_pricing_file
 
 from replayforge.cassettes.schema import Cassette
@@ -15,7 +18,7 @@ from replayforge.providers.nebius import Catalog, CatalogModel, NebiusTokenFacto
 
 @dataclass(frozen=True, slots=True)
 class LaneConfig:
-    """``provider`` is one of fixture | nebius | benchtrace (any benchtrace model prefix)."""
+    """``provider`` is one of fixture | nebius | benchtrace | local."""
 
     provider: str
     model: str
@@ -26,6 +29,25 @@ class LaneConfig:
 
     def label(self) -> str:
         return f"{self.provider}:{self.model}"
+
+
+def local_base_url() -> str:
+    url = os.environ.get("REPLAYFORGE_LOCAL_BASE_URL", "http://127.0.0.1:11434/v1")
+    parsed = urlsplit(url)
+    try:
+        host_is_loopback = parsed.hostname == "localhost" or ipaddress.ip_address(parsed.hostname or "").is_loopback
+    except ValueError:
+        host_is_loopback = False
+    if (
+        parsed.scheme != "http"
+        or not host_is_loopback
+        or parsed.username
+        or parsed.password
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise ValueError("local provider URL must be an HTTP loopback address without credentials, query or fragment")
+    return url
 
 
 def build_provider(
@@ -45,6 +67,8 @@ def build_provider(
             solutions_dir,
             config=ProviderConfig(max_retries=0, max_concurrency=max_concurrency),
         )
+    if lane.provider == "local":
+        return OpenAICompatibleProvider(name="local", base_url=local_base_url(), api_key="local", config=config)
     if lane.provider == "nebius":
         return NebiusTokenFactoryProvider(config=config)
     if lane.provider == "benchtrace":

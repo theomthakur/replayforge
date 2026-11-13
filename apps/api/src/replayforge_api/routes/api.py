@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from replayforge.cassettes import CassetteError, load_suite
 from replayforge.policy import MigrationPolicy
 from replayforge.provenance import git_revision
-from replayforge.providers import FIXTURE_PROFILES, NebiusTokenFactoryProvider
+from replayforge.providers import FIXTURE_PROFILES, NebiusTokenFactoryProvider, local_base_url
 from replayforge.report import render_markdown
 from sqlalchemy import select
 from sse_starlette.sse import EventSourceResponse
@@ -67,7 +67,13 @@ def ready() -> dict:
 
 @router.get("/api/models")
 async def models() -> dict:
-    result: dict = {"fixture": FIXTURE_MODELS, "nebius": {"configured": False, "models": []}, "baseline": []}
+    local_models = [name.strip() for name in os.environ.get("REPLAYFORGE_LOCAL_MODELS", "").split(",") if name.strip()]
+    result: dict = {
+        "fixture": FIXTURE_MODELS,
+        "nebius": {"configured": False, "models": []},
+        "baseline": [],
+        "local": [{"provider": "local", "model": name, "label": f"Local: {name}"} for name in local_models],
+    }
     if os.environ.get("BASELINE_MODEL"):
         result["baseline"].append(
             {"provider": "benchtrace", "model": os.environ["BASELINE_MODEL"], "label": os.environ["BASELINE_MODEL"]}
@@ -256,7 +262,9 @@ def _mission_plan(suite, brief: str) -> tuple[list[str], MigrationPolicy, dict]:
         "task_count": len(selected),
         "categories": sorted({task.category for task in selected}),
         "critical_tasks": [task.id for task in selected if task.critical],
-        "reason": "full workload requested" if len(selected) == len(all_tasks) else "matched the goal to signed cassette tasks",
+        "reason": "full workload requested"
+        if len(selected) == len(all_tasks)
+        else "matched the goal to signed cassette tasks",
         "policy": policy.model_dump(),
     }
     return plan["task_ids"], policy, plan
@@ -278,8 +286,17 @@ def estimate(body: ExperimentBody) -> dict:
 
 
 async def _allowed_lane(lane: LaneBody, *, require_nvidia: bool = False) -> None:
-    if lane.provider not in ("fixture", "nebius", "benchtrace"):
+    if lane.provider not in ("fixture", "nebius", "benchtrace", "local"):
         raise HTTPException(422, f"unsupported provider {lane.provider!r}")
+    if lane.provider == "local" and lane.model not in {
+        name.strip() for name in os.environ.get("REPLAYFORGE_LOCAL_MODELS", "").split(",") if name.strip()
+    }:
+        raise HTTPException(422, "local model must be listed in REPLAYFORGE_LOCAL_MODELS")
+    if lane.provider == "local":
+        try:
+            local_base_url()
+        except ValueError as error:
+            raise HTTPException(422, str(error)) from error
     if lane.provider == "fixture" and lane.model not in FIXTURE_PROFILES:
         raise HTTPException(422, "unknown fixture profile")
     if lane.provider == "nebius":

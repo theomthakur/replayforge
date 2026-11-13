@@ -43,7 +43,7 @@ export function App() {
           <a href="/system-design" aria-current={path === "/system-design" ? "page" : undefined} onClick={(e) => { e.preventDefault(); navigate("/system-design"); }}>System design</a>
           <a href="/presentation" aria-current={path === "/presentation" ? "page" : undefined} onClick={(e) => { e.preventDefault(); navigate("/presentation"); }}>Presentation</a>
         </nav>
-        <span className="topbar-context">Nebius × NVIDIA · 2026</span>
+        <span className="topbar-context">Coding-agent evaluation</span>
       </header>
       <main>{page}</main>
     </div>

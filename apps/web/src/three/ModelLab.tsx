@@ -197,7 +197,7 @@ function Room({ decision }: { decision: string | null }) {
       </group>)}
       <SignPlate position={[0, 4.02, -4.86]} label="ReplayForge Evaluation Lab" detail="Paired evidence · deterministic release decisions" color="#4d8f32" brand />
       <SignPlate position={[-5.9, 1.05, -4.84]} label="Baseline Lane" detail="Current production model" color={COLOR.baseline} />
-      <SignPlate position={[-2.9, 1.05, -4.84]} label="NVIDIA Lane" detail="Candidate model on Nebius" color={COLOR.candidate} />
+      <SignPlate position={[-2.9, 1.05, -4.84]} label="Candidate Lane" detail="Configured candidate model" color={COLOR.candidate} />
       <SignPlate position={[1.05, 1.05, -4.84]} label="Test Bench" detail="Deterministic graders only" color="#526d79" />
       <SignPlate position={[4.45, 1.05, -4.84]} label="Investigation" detail="Referenced failure taxonomy" color={COLOR.warn} />
       <Plant position={[-8.35, 0, 4.15]} /><Plant position={[8.35, 0, -4.05]} />
@@ -254,7 +254,7 @@ function Scene({ tasks, state, selectedTask, selectedLane, reducedMotion, onSele
       <ServerRack position={[-8.25, 0, -3.65]} color={COLOR.baseline} />
       <ServerRack position={[-7.35, 0, -3.65]} color={COLOR.candidate} />
       <Desk position={[-4.7, 0, -2.75]} color={COLOR.baseline} active={activity.baseline > 0} label="Baseline coding agent" detail={`${activity.baseline} active cases`} operator={{ skin: "#bd805d", hair: "#27201d", shirt: "#287f91" }} />
-      <Desk position={[-4.7, 0, 2.75]} rotation={Math.PI} color={COLOR.candidate} active={activity.candidate > 0} label="NVIDIA coding agent" detail={`${activity.candidate} active cases`} operator={{ skin: "#e1b18b", hair: "#6c3d25", shirt: "#5c963d" }} />
+      <Desk position={[-4.7, 0, 2.75]} rotation={Math.PI} color={COLOR.candidate} active={activity.candidate > 0} label="Candidate coding agent" detail={`${activity.candidate} active cases`} operator={{ skin: "#e1b18b", hair: "#6c3d25", shirt: "#5c963d" }} />
       <Desk position={[0.7, 0, 0]} rotation={Math.PI / 2} color="#596b7c" active={activity.grading} label="Evidence pipeline" detail="deterministic test bench" operator={{ skin: "#8b5b42", hair: "#181818", shirt: "#596b7c" }} />
       <Desk position={[4.9, 0, 2.8]} rotation={Math.PI} color={COLOR.warn} active={state.investigating.length > 0} label="Regression investigator" detail={`${Object.keys(state.findings).length} findings`} operator={{ skin: "#edc7a4", hair: "#a77347", shirt: "#be7727" }} />
       <Desk position={[4.9, 0, -2.8]} color="#8e79bd" active={state.status === "deciding"} label="Release guardian" detail="deterministic policy rules" operator={{ skin: "#c9906c", hair: "#3b2925", shirt: "#8069ae" }} />

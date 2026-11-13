@@ -12,7 +12,7 @@ function TwoDimensionalFloor({ state }: { state: LabState }) {
   const done = cases.filter((item) => ["passed", "failed"].includes(item.stage)).length;
   const stations = [
     { name: "Baseline agent", detail: `${active("baseline")} active work packets`, tone: "baseline" },
-    { name: "NVIDIA agent", detail: `${active("candidate")} active work packets`, tone: "candidate" },
+    { name: "Candidate agent", detail: `${active("candidate")} active work packets`, tone: "candidate" },
     { name: "Evidence pipeline", detail: `${done}/${cases.length} lane executions stored`, tone: "evidence" },
     { name: "Investigator", detail: `${state.investigating.length} cases under review`, tone: "investigator" },
     { name: "Release guardian", detail: state.decision ? `${state.decision.toUpperCase()} recorded` : "waiting for paired evidence", tone: "guardian" },

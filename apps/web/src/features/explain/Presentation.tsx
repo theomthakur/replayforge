@@ -8,9 +8,9 @@ const Card = ({ number, title, children }: { number: string; title: string; chil
 
 const SLIDES: Slide[] = [
   {
-    label: "Opening", eyebrow: "NEBIUS × NVIDIA GLOBAL AI HACKATHON · CODING & AGENTIC ENGINEERING",
+    label: "Opening", eyebrow: "CODING AGENT EVALUATION · PAIRED WORKLOADS",
     title: <>Your coding agent passed yesterday.<br /><span>Will it survive a model migration?</span></>,
-    body: <><p className="pitch-lede">ReplayForge runs the same repository work on your current model and an NVIDIA open model, then tests the code—not the explanation—before the migration reaches production.</p><div className="pitch-metrics"><div><b>20</b><span>versioned coding cases</span></div><div><b>2</b><span>isolated model lanes</span></div><div><b>1</b><span>enforceable release gate</span></div></div></>,
+    body: <><p className="pitch-lede">ReplayForge runs the same repository work on a baseline and a candidate model, then tests the code—not the explanation—before the migration reaches production.</p><div className="pitch-metrics"><div><b>20</b><span>versioned coding cases</span></div><div><b>2</b><span>isolated model lanes</span></div><div><b>1</b><span>enforceable release gate</span></div></div></>,
   },
   {
     label: "Problem", eyebrow: "01 · THE RELIABILITY GAP", title: "Static benchmarks miss the failures that break real coding agents",
@@ -22,7 +22,7 @@ const SLIDES: Slide[] = [
   },
   {
     label: "Model Lab", eyebrow: "03 · THE OPERATIONS FLOOR", title: "The 3D room is not theatre. It is the event log made visible.",
-    body: <div className="pitch-floor"><div className="floor-map"><span className="zone baseline-zone">Baseline lane</span><span className="zone test-zone">Deterministic test bench</span><span className="zone candidate-zone">NVIDIA candidate lane</span><span className="zone investigate-zone">Investigation</span><span className="zone gate-zone">Release gate</span></div><div className="pitch-copy"><p>Every work packet represents one saved case on one lane. It moves only when the backend commits an event.</p><p>Click a packet to open the exact trace. Hide 3D and the same evidence remains available in the cases table.</p></div></div>,
+    body: <div className="pitch-floor"><div className="floor-map"><span className="zone baseline-zone">Baseline lane</span><span className="zone test-zone">Deterministic test bench</span><span className="zone candidate-zone">Candidate lane</span><span className="zone investigate-zone">Investigation</span><span className="zone gate-zone">Release gate</span></div><div className="pitch-copy"><p>Every work packet represents one saved case on one lane. It moves only when the backend commits an event.</p><p>Click a packet to open the exact trace. Hide 3D and the same evidence remains available in the cases table.</p></div></div>,
   },
   {
     label: "Trust", eyebrow: "04 · TRUST BOUNDARIES", title: "The model can propose work. It cannot grade or approve itself.",
@@ -30,11 +30,11 @@ const SLIDES: Slide[] = [
   },
   {
     label: "Architecture", eyebrow: "05 · SYSTEM DESIGN", title: "A resumable control plane turns model behavior into release evidence",
-    body: <div className="mini-architecture"><div>React command center<small>REST snapshot · resumable SSE · 3D lab</small></div><i>→</i><div className="core">FastAPI control plane<small>orchestration · persistence · idempotency</small></div><i>→</i><div>Paired agent runners<small>baseline · NVIDIA on Nebius</small></div><span>↓</span><div>Fresh sandboxes<small>bounded tools · deterministic graders</small></div><span>↓</span><div className="gate">GitHub release gate<small>stored report · pass / warn / block</small></div></div>,
+    body: <div className="mini-architecture"><div>React command center<small>REST snapshot · resumable SSE · 3D lab</small></div><i>→</i><div className="core">FastAPI control plane<small>orchestration · persistence · idempotency</small></div><i>→</i><div>Paired agent runners<small>baseline · configured candidate</small></div><span>↓</span><div>Fresh sandboxes<small>bounded tools · deterministic graders</small></div><span>↓</span><div className="gate">GitHub release gate<small>stored report · pass / warn / block</small></div></div>,
   },
   {
     label: "Proof", eyebrow: "06 · WHAT EXISTS TODAY", title: "A working reliability lab, with the limits stated plainly",
-    body: <><ul className="proof-list"><li><b>✓</b>60 backend and engine tests, plus 11 web tests</li><li><b>✓</b>20-case paired fixture run with seeded regressions</li><li><b>✓</b>Nebius catalog discovery and NVIDIA-model validation</li><li><b>✓</b>Persistent events, resume, cancellation and GitHub check upsert</li><li><b>△</b>Live model run and real GitHub PR require local credentials</li></ul><p className="pitch-foot">github.com/theomthakur/replayforge</p></>,
+    body: <><ul className="proof-list"><li><b>✓</b>60 backend and engine tests, plus 11 web tests</li><li><b>✓</b>20-case paired fixture run with seeded regressions</li><li><b>✓</b>Optional Nebius catalog discovery and NVIDIA-model validation</li><li><b>✓</b>Persistent events, resume, cancellation and GitHub check upsert</li><li><b>△</b>Live model run and real GitHub PR require local credentials</li></ul><p className="pitch-foot">github.com/theomthakur/replayforge</p></>,
   },
   {
     label: "Close", eyebrow: "REPLAYFORGE", title: <>Change the model.<br /><span>Keep the reliability contract.</span></>,

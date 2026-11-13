@@ -55,7 +55,7 @@ function OperationsBrief({ baseline, candidate, completedRuns, totalRuns, state 
   const roles = [
     { name: "Mission controller", kind: "orchestrator", status: controllerStatus, active: !missionFinished && !["unknown", "draft", "ready"].includes(state.status) },
     { name: "Baseline coding agent", kind: "model agent", status: baselineActive ? `${baselineActive} active case${baselineActive === 1 ? "" : "s"}` : lanesFinished ? "evidence stored" : missionFinished ? "stopped" : "waiting for work", active: baselineActive > 0 },
-    { name: "NVIDIA coding agent", kind: "model agent", status: candidateActive ? `${candidateActive} active case${candidateActive === 1 ? "" : "s"}` : lanesFinished ? "evidence stored" : missionFinished ? "stopped" : "waiting for work", active: candidateActive > 0 },
+    { name: "Candidate coding agent", kind: "model agent", status: candidateActive ? `${candidateActive} active case${candidateActive === 1 ? "" : "s"}` : lanesFinished ? "evidence stored" : missionFinished ? "stopped" : "waiting for work", active: candidateActive > 0 },
     { name: "Evidence pipeline", kind: "deterministic", status: lanesFinished ? "checks complete" : active.some((item) => item.stage === "grading") ? "grading outputs" : missionFinished ? "stopped" : "watching traces", active: active.some((item) => item.stage === "grading") },
     { name: "Regression investigator", kind: "hybrid", status: state.investigating.length ? `${state.investigating.length} under review` : Object.keys(state.findings).length ? `${Object.keys(state.findings).length} findings stored` : "waiting for evidence", active: state.investigating.length > 0 },
     { name: "Release guardian", kind: "policy engine", status: state.decision ? `${state.decision.toUpperCase()} recorded` : state.status === "deciding" ? "applying guardrails" : "waiting for comparison", active: state.status === "deciding" },
@@ -65,7 +65,7 @@ function OperationsBrief({ baseline, candidate, completedRuns, totalRuns, state 
       <header><h2 id="brief-title">Agent operations brief</h2><span className="live-indicator"><i /> persisted state</span></header>
       <div className="body">
         <div className="lane-card baseline-card"><span>Baseline lane</span><strong>{baseline}</strong></div>
-        <div className="lane-card candidate-card"><span>NVIDIA candidate</span><strong>{candidate}</strong></div>
+        <div className="lane-card candidate-card"><span>Candidate</span><strong>{candidate}</strong></div>
         <div className="run-progress" aria-label={`${completedRuns} of ${totalRuns} lane executions complete`}>
           <div><span>Lane executions</span><strong>{completedRuns}/{totalRuns}</strong></div>
           <progress value={completedRuns} max={Math.max(totalRuns, 1)} />

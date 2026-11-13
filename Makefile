@@ -24,7 +24,7 @@ web:
 	cd apps/web && npx vite --port 5173
 
 fixture-run:
-	.venv/bin/replayforge run --suite fixtures/suites/demo-suite.yaml --baseline fixture:fixture/reference --candidate fixture:fixture/variant --out data/runs/fixture
+	.venv/bin/replayforge run --suite fixtures/suites/demo-suite.yaml --baseline fixture:fixture/reference --candidate fixture:fixture/variant --out data/runs/fixture-$$(date +%Y%m%d-%H%M%S)-$$$$
 
 live-smoke:
 	.venv/bin/python scripts/live_smoke.py

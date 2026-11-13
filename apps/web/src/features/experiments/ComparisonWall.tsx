@@ -25,7 +25,7 @@ export function ComparisonWall({ snapshot, state }: { snapshot: ExperimentSnapsh
       <div className="comparison-lanes">
         <div><i className="baseline" /><span><small>Current baseline</small><strong>{snapshot.baseline.model}</strong></span></div>
         <b>versus</b>
-        <div><i className="candidate" /><span><small>NVIDIA candidate</small><strong>{snapshot.candidate.model}</strong></span></div>
+        <div><i className="candidate" /><span><small>Candidate</small><strong>{snapshot.candidate.model}</strong></span></div>
       </div>
       <div className="comparison-table" role="table" aria-label="Paired model metrics">
         <div className="comparison-row comparison-head" role="row"><span>Measure</span><span>Baseline</span><span>Candidate</span><span>Change</span></div>

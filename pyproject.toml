@@ -9,7 +9,7 @@ members = ["packages/engine", "apps/api"]
 [tool.uv.sources]
 replayforge = { workspace = true }
 replayforge-api = { workspace = true }
-benchtrace = { path = "../../benchtrace", editable = true }
+benchtrace = { git = "https://github.com/theomthakur/benchtrace.git", rev = "7588dcaea1496c5725f0895f9a7a9df3bd1d300e" }
 
 [dependency-groups]
 dev = [

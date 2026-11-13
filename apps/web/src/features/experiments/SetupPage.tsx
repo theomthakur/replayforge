@@ -9,7 +9,7 @@ const optionKey = (o: ModelOption) => `${o.provider}|${o.model}`;
 
 const AGENT_STAGES = [
   { mark: "01", name: "Mission controller", detail: "Locks the suite, repository digest, limits and release policy before dispatch." },
-  { mark: "02", name: "Paired coding agents", detail: "Baseline and NVIDIA agents independently inspect, edit and test fresh copies of the same repository." },
+  { mark: "02", name: "Paired coding agents", detail: "Baseline and candidate agents independently inspect, edit and test fresh copies of the same repository." },
   { mark: "03", name: "Evidence pipeline", detail: "Sandbox tools and deterministic graders record what happened instead of trusting either agent's summary." },
   { mark: "04", name: "Investigator", detail: "Reconciles disagreements, classifies failures and links every finding to a trace step or grader." },
   { mark: "05", name: "Release guardian", detail: "Applies the stored rules and publishes the resulting pass, warn or block decision." },
@@ -74,6 +74,7 @@ export function SetupPage() {
   const groups = useMemo(() => [
     { label: "NVIDIA models on Nebius Token Factory (live catalog)", options: (nebius?.models ?? []).filter((m) => m.nvidia) },
     { label: "Other Token Factory models", options: (nebius?.models ?? []).filter((m) => !m.nvidia) },
+    { label: "Configured local models", options: models.data?.local ?? [] },
     { label: "Configured baseline", options: models.data?.baseline ?? [] },
     { label: "Fixture (scripted, not a model)", options: models.data?.fixture ?? [] },
   ], [models.data, nebius]);
@@ -210,7 +211,7 @@ export function SetupPage() {
           <div className="section-instruction"><span>2</span><div><strong>Assign the two coding-agent lanes</strong><small>Each agent gets an independent sandbox, identical tools and the same step limits.</small></div></div>
           <div className="row">
             <ModelSelect id="baseline" label="Baseline (current model)" value={baseline} onChange={setBaseline} groups={groups} />
-            <ModelSelect id="candidate" label="Candidate (NVIDIA open model)" value={candidate} onChange={setCandidate} groups={groups} />
+            <ModelSelect id="candidate" label="Candidate model" value={candidate} onChange={setCandidate} groups={groups} />
           </div>
           {nebius && !nebius.configured && <p className="callout">Nebius Token Factory is not configured on the server ({nebius.reason}). Live NVIDIA models appear here once the key is set.</p>}
           {nebius?.error && <p className="callout error-text">Model catalog error: {nebius.error}</p>}

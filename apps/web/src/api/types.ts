@@ -170,6 +170,7 @@ export interface ModelOption {
 
 export interface ModelCatalog {
   fixture: ModelOption[];
+  local?: ModelOption[];
   baseline: ModelOption[];
   nebius: { configured: boolean; reason?: string; error?: string; fetched_at?: string; models: ModelOption[] };
 }

@@ -20,7 +20,9 @@ from replayforge.report import render_markdown, to_json
 def _lane(value: str) -> LaneConfig:
     provider, _, model = value.partition(":")
     if not model:
-        raise argparse.ArgumentTypeError("use provider:model, e.g. fixture:fixture/reference or nebius:<model-id>")
+        raise argparse.ArgumentTypeError(
+            "use provider:model, e.g. fixture:fixture/reference, local:<model-id> or nebius:<model-id>"
+        )
     if provider == "fixture" and model not in FIXTURE_PROFILES:
         choices = ", ".join(sorted(FIXTURE_PROFILES))
         raise argparse.ArgumentTypeError(f"unknown fixture profile {model!r}; choose {choices}")
@@ -55,7 +57,11 @@ async def _validate_model(model: str) -> int:
 async def _run(args: argparse.Namespace) -> int:
     suite = load_suite(args.suite)
     out = Path(args.out)
-    out.mkdir(parents=True, exist_ok=True)
+    try:
+        out.mkdir(parents=True, exist_ok=False)
+    except FileExistsError:
+        print(f"output path already exists: {out}; choose a new --out directory", file=sys.stderr)
+        return 1
 
     async def progress(result: CaseResult) -> None:
         mark = "PASS" if result.passed else "FAIL"

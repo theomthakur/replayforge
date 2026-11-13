@@ -1,5 +1,7 @@
 # Implementation status
 
+> 13 November 2026 update: the local fixture flow and a three-case real local-model smoke run were verified. See [local verification](LOCAL-FIXTURE-VERIFICATION-2026-11-13.md) for evidence and current limitations. Historical status below describes the September hackathon milestone, not the current local-provider work.
+
 Audience: Om and anyone continuing the build. Updated 19 September 2026.
 
 Legend: ✅ built and verified · 🟡 built, not yet exercised against the real service · ⛔ blocked on an
